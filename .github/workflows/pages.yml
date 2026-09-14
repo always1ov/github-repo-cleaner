@@ -31,8 +31,10 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html _site/index.html
-      # enablement turns Pages on for the repository on the first run,
-      # so no manual setting is needed before the site can deploy.
+      # Best effort: this turns Pages on by itself where the Actions token is
+      # allowed to. On repositories where it is not, the first run fails with
+      # "Resource not accessible by integration" and Pages has to be switched on
+      # once by hand: Settings -> Pages -> Source: GitHub Actions.
       - uses: actions/configure-pages@v5
         with:
           enablement: true

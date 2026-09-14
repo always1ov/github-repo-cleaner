@@ -41,6 +41,8 @@
    建议用**经典令牌**，权限见下表。
 2. 打开应用——[在线版](https://always1ov.github.io/github-repo-cleaner/)，
    或者把 [`index.html`](index.html) 下载下来双击。
+   *（自己部署的话，先到 Settings → Pages → Source 选 **GitHub Actions**，
+   这一步只需做一次，之后每次推送都会自动部署。）*
 3. 粘贴令牌，点「读取」。
 4. 用完回去把令牌吊销。
 

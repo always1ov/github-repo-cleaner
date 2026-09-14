@@ -43,6 +43,8 @@ them. See [SECURITY.md](SECURITY.md) for the threat model.
    A **classic** token works best — see the scopes below.
 2. Open the app — [hosted](https://always1ov.github.io/github-repo-cleaner/), or
    download [`index.html`](index.html) and double-click it.
+   *(Hosting this yourself? Set Settings → Pages → Source to **GitHub Actions**
+   once; the deploy workflow handles every push after that.)*
 3. Paste the token and press **Read my account**.
 4. Revoke the token when you are done.
 
