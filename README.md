@@ -34,8 +34,13 @@ than a promise, so the guarantees are structural and you can check each one in a
 | **It works offline.** Download the file and open it from your disk; it never needs this repo again. | Save the page, turn off Wi-Fi, open it — the UI loads fine (only API calls fail). |
 | **No dynamic code.** No `eval`, no `new Function`. | `grep -nE "eval\(|new Function" index.html` → nothing. |
 
-All five are enforced by tests that run in CI, so a future commit cannot quietly break
-them. See [SECURITY.md](SECURITY.md) for the threat model.
+All five are asserted by `npm test`, so breaking one fails the tests rather than
+shipping quietly.
+
+What this does **not** protect you from: a copy of this page served from somewhere else
+(read its CSP yourself, or just run the file locally), a browser extension (they can read
+page memory and ignore the page's CSP), and your own mistakes — deletion is permanent, so
+use the backup script, or archive first, which is reversible.
 
 ## Getting started
 
@@ -106,8 +111,7 @@ Support, with each repository and the reason it is stuck.
 No dependencies, no build. Edit `index.html`, reload the browser.
 
 ```sh
-npm test            # 43 unit + structure tests, zero dependencies
-npm run test:browser  # 12 end-to-end tests in real Chromium (installs Playwright)
+npm test   # 43 tests, zero dependencies
 ```
 
 The unit tests load the real `index.html`: the pure-logic region between the
