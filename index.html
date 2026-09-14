@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://api.github.com; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Bulk-manage your GitHub repositories and packages from one page. Runs entirely in your browser; the only host it can reach is api.github.com.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2318222E'/%3E%3Cpath d='M9 12h14M9 17h14M9 22h8' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>GitHub Repo Cleaner</title>
+<style>
+:root{
+  --paper:#EDEFF2; --card:#FFFFFF; --ink:#18222E; --muted:#65748A;
+  --line:#D4DAE3; --line-soft:#E6EAF0; --soft:#F7F8FA; --field:#FBFCFD; --hover:#F8F9FB;
+  --mark:#A3231C; --mark-bg:#FCF4F3; --mark-line:#E0BDBB; --danger:#A3231C;
+  --pick:#1F4E79; --pick-soft:rgba(31,78,121,.07); --pick-soft2:rgba(31,78,121,.11);
+  --ok:#2E6B4F; --ok-bg:#F4FAF7; --ok-line:#BFD8CB;
+  --warn:#8A6212; --warn-bg:#FCF9F0; --warn-line:#E0D2AE;
+  --btn-fg:#FFFFFF; --btn-hover:#0F1822;
+  --bar-bg:#18222E; --bar-fg:#FFFFFF; --bar-sub:#A9B6C8; --bar-line:#3D4B5D; --bar-hover:#26313F;
+  --num:#37455A; --shadow:0 20px 50px rgba(16,24,34,.3);
+  --radius:4px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1218; --card:#161C24; --ink:#E4EAF1; --muted:#8B9AAE;
+    --line:#2B3441; --line-soft:#232B36; --soft:#1B222C; --field:#12171E; --hover:#1B222C;
+    --mark:#E8736B; --mark-bg:#2A1A19; --mark-line:#5A3230; --danger:#B4362D;
+    --pick:#74A9DB; --pick-soft:rgba(116,169,219,.10); --pick-soft2:rgba(116,169,219,.16);
+    --ok:#6DBF97; --ok-bg:#16241D; --ok-line:#2F4A3B;
+    --warn:#D9AE5C; --warn-bg:#241F14; --warn-line:#4A3D24;
+    --btn-fg:#0E1218; --btn-hover:#C9D4E0;
+    --bar-bg:#242E3B; --bar-fg:#EDF1F6; --bar-sub:#9AA9BC; --bar-line:#3D4B5D; --bar-hover:#2F3B4B;
+    --num:#A9B7C9; --shadow:0 20px 50px rgba(0,0,0,.55);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1218; --card:#161C24; --ink:#E4EAF1; --muted:#8B9AAE;
+  --line:#2B3441; --line-soft:#232B36; --soft:#1B222C; --field:#12171E; --hover:#1B222C;
+  --mark:#E8736B; --mark-bg:#2A1A19; --mark-line:#5A3230; --danger:#B4362D;
+  --pick:#74A9DB; --pick-soft:rgba(116,169,219,.10); --pick-soft2:rgba(116,169,219,.16);
+  --ok:#6DBF97; --ok-bg:#16241D; --ok-line:#2F4A3B;
+  --warn:#D9AE5C; --warn-bg:#241F14; --warn-line:#4A3D24;
+  --btn-fg:#0E1218; --btn-hover:#C9D4E0;
+  --bar-bg:#242E3B; --bar-fg:#EDF1F6; --bar-sub:#9AA9BC; --bar-line:#3D4B5D; --bar-hover:#2F3B4B;
+  --num:#A9B7C9; --shadow:0 20px 50px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;padding:0 0 108px;display:flex;flex-direction:column;min-height:100vh}
+a{color:var(--ink)}
+a:hover{color:var(--pick)}
+button{font:inherit;cursor:pointer;color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--pick);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto}
+.spacer{flex:1}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+header{background:var(--card);border-bottom:1px solid var(--line)}
+.hero{padding:34px 20px 30px}
+.hero-top{display:flex;align-items:flex-start;gap:12px}
+.utils{display:flex;gap:6px;flex:0 0 auto}
+.hero h1{margin:0 0 6px;font-size:30px;font-weight:650;letter-spacing:-.02em}
+.hero .lede{margin:0 0 22px;color:var(--muted);max-width:64ch}
+.connect{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.connect input{flex:1 1 380px;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--field);font-family:var(--mono);font-size:13px;color:var(--ink)}
+.btn{padding:10px 16px;border:1px solid var(--ink);border-radius:var(--radius);background:var(--ink);color:var(--btn-fg);font-weight:550}
+.btn:hover{background:var(--btn-hover)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:var(--soft)}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.danger:hover{filter:brightness(.9)}
+.btn.sm{padding:6px 11px;font-size:13px;font-weight:500}
+.btn.link{background:none;border:0;padding:0;text-decoration:underline;font-size:13px;color:var(--muted)}
+.btn.link:hover{color:var(--ink);background:none}
+.err{color:var(--mark);margin-top:12px;font-size:13px}
+
+.trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:24px}
+.trust div{border:1px solid var(--line-soft);border-radius:var(--radius);padding:11px 13px;background:var(--soft)}
+.trust b{display:block;font-size:13px;font-weight:600;margin-bottom:3px}
+.trust span{color:var(--muted);font-size:12.5px}
+.hint{color:var(--muted);font-size:13px;margin-top:18px;max-width:84ch}
+.hint code{font-family:var(--mono);background:var(--soft);border:1px solid var(--line-soft);padding:1px 5px;border-radius:3px;font-size:12px}
+.hint a{color:var(--pick)}
+
+.bar{display:none;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px}
+.bar.on{display:flex}
+.who{display:flex;align-items:center;gap:9px;font-weight:550}
+.mono-badge{width:26px;height:26px;border-radius:50%;background:var(--pick);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:650}
+.meta{color:var(--muted);font-size:13px}
+.tabs{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.tabs button{padding:6px 13px;border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:500}
+.tabs button+button{border-left:1px solid var(--line)}
+.tabs button.on{background:var(--ink);color:var(--btn-fg)}
+.demo-flag{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);border-radius:3px;padding:2px 8px;font-size:12px;font-weight:600}
+
+.tools{display:none;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.tools.on{display:block}
+.tools-in{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 20px}
+.tools input[type=search],.tools select{padding:7px 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--field);color:var(--ink);font-size:13px}
+.tools input[type=search]{flex:1 1 200px;min-width:150px}
+.sep{width:1px;height:22px;background:var(--line-soft)}
+.count{color:var(--muted);font-size:13px;white-space:nowrap}
+
+main{max-width:1180px;width:100%;margin:0 auto;padding:16px 20px;flex:1 0 auto}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.stat{border:1px solid var(--line);background:var(--card);border-radius:var(--radius);padding:7px 12px;text-align:left;min-width:104px}
+.stat:hover{border-color:var(--pick);background:var(--pick-soft)}
+.stat.on{border-color:var(--pick);background:var(--pick-soft)}
+.stat b{display:block;font-size:16px;font-weight:600;font-family:var(--mono);line-height:1.3}
+.stat span{color:var(--muted);font-size:12px}
+.notice{font-size:13px;margin:0 0 12px;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--line-soft);background:var(--soft);color:var(--muted)}
+.notice.warn{border-color:var(--warn-line);background:var(--warn-bg);color:var(--warn)}
+.notice.bad{border-color:var(--mark-line);background:var(--mark-bg);color:var(--mark)}
+.notice a{color:inherit}
+.empty{padding:60px 0;text-align:center;color:var(--muted)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
+table{width:100%;border-collapse:collapse;min-width:640px}
+thead th{text-align:left;font-weight:600;font-size:12px;color:var(--muted);padding:9px 10px;border-bottom:1px solid var(--line);background:var(--soft);white-space:nowrap}
+thead th.s{cursor:pointer;user-select:none}
+thead th.s:hover{color:var(--ink)}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--hover)}
+tbody tr.sel{background:var(--pick-soft)}
+tbody tr.sel:hover{background:var(--pick-soft2)}
+tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--pick)}
+tbody tr.gone{opacity:.4}
+tbody tr.gone .nm{text-decoration:line-through}
+td.c{width:34px;text-align:center}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--pick);cursor:pointer;margin:0}
+input[type=checkbox]:disabled{cursor:not-allowed;opacity:.4}
+.nm{font-family:var(--mono);font-size:13px;font-weight:500;word-break:break-all}
+.nm .ow{color:var(--muted);font-weight:400}
+.desc{color:var(--muted);font-size:12px;margin-top:2px;max-width:56ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.num{text-align:right;font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:var(--num)}
+.date{font-family:var(--mono);font-size:12.5px;color:var(--num);white-space:nowrap}
+.tag{display:inline-block;padding:1px 6px;border:1px solid var(--line);border-radius:3px;font-size:11px;color:var(--muted);margin:2px 4px 0 0;white-space:nowrap;background:var(--soft)}
+.tag.priv{border-color:var(--line);color:var(--ink)}
+.tag.arc{border-color:var(--warn-line);color:var(--warn);background:var(--warn-bg)}
+.tag.keep{border-color:var(--ok-line);color:var(--ok);background:var(--ok-bg)}
+.tag.block{border-color:var(--mark-line);color:var(--mark);background:var(--mark-bg)}
+.st{font-size:12px;white-space:nowrap}
+.st.run{color:var(--warn)}
+.st.ok{color:var(--ok)}
+.st.err{color:var(--mark)}
+.pager{display:flex;gap:8px;align-items:center;justify-content:center;padding:14px 0 0;flex-wrap:wrap;color:var(--muted);font-size:13px}
+
+.action{position:fixed;left:0;right:0;bottom:0;background:var(--bar-bg);color:var(--bar-fg);transform:translateY(100%);transition:transform .18s ease;z-index:40}
+.action.on{transform:translateY(0)}
+.action-in{max-width:1180px;margin:0 auto;padding:13px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.action strong{font-size:16px;display:block}
+.action .sub{color:var(--bar-sub);font-size:13px}
+.action .btn.ghost{color:var(--bar-fg);border-color:var(--bar-line);background:transparent}
+.action .btn.ghost:hover{background:var(--bar-hover)}
+.acts{display:none;gap:8px;flex-wrap:wrap}
+.acts.on{display:flex}
+
+.mask{position:fixed;inset:0;background:rgba(12,18,26,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.mask.on{display:flex}
+.modal{background:var(--card);border-radius:6px;width:100%;max-width:660px;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.modal h2{margin:0;padding:18px 22px 10px;font-size:19px;font-weight:650}
+.modal .body{padding:0 22px;overflow:auto;flex:1}
+.modal .body p{margin:6px 0 0;color:var(--muted)}
+.modal .body p.bad{color:var(--mark)}
+.modal .body p.warn{color:var(--warn)}
+.modal .foot{padding:16px 22px 20px;border-top:1px solid var(--line-soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.list{margin:10px 0 4px;border:1px solid var(--line);border-radius:var(--radius);max-height:220px;overflow:auto}
+.list div{padding:6px 10px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:12.5px;display:flex;gap:8px;align-items:baseline}
+.list div:last-child{border-bottom:0}
+.list .flag{font-family:var(--sans);font-size:11px;color:var(--mark);margin-left:auto;text-align:right}
+.field{margin:14px 0 2px}
+.field label{display:block;font-size:13px;font-weight:550;margin-bottom:6px}
+.field input,.field select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--mono);font-size:13px;background:var(--field);color:var(--ink)}
+.field input[type=number]{width:130px}
+.ta{width:100%;height:230px;padding:10px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--mono);font-size:12.5px;line-height:1.55;resize:vertical;color:var(--ink);background:var(--field)}
+.confirm-in{padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--mono);width:170px;font-size:13px;background:var(--field);color:var(--ink)}
+.chk{display:flex;gap:8px;align-items:flex-start;margin:14px 0 4px;font-size:13.5px}
+.log{font-family:var(--mono);font-size:12.5px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius);padding:10px;background:var(--field)}
+.log div{padding:2px 0;word-break:break-word}
+.log .ok{color:var(--ok)}
+.log .no{color:var(--mark)}
+.log .sk{color:var(--muted)}
+.prog{height:5px;background:var(--line-soft);border-radius:3px;overflow:hidden;margin:14px 0 8px}
+.prog i{display:block;height:100%;background:var(--pick);width:0;transition:width .2s}
+.prog.red i{background:var(--mark)}
+.perm{width:100%;border-collapse:collapse;margin-top:10px}
+.perm td{padding:6px 8px;border-bottom:1px solid var(--line-soft);font-size:13px}
+.perm td:first-child{font-weight:550;white-space:nowrap}
+.perm td:last-child{text-align:right;white-space:nowrap;font-size:12.5px}
+.perm .y{color:var(--ok)}
+.perm .n{color:var(--mark)}
+.keys{width:100%;border-collapse:collapse}
+.keys td{padding:5px 8px;border-bottom:1px solid var(--line-soft);font-size:13px}
+.keys kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:1px 6px;background:var(--soft)}
+
+footer{max-width:1180px;width:100%;margin:0 auto;padding:26px 20px 10px;flex:0 0 auto;color:var(--muted);font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+footer a{color:var(--muted)}
+
+@media (max-width:760px){
+  .hide-s{display:none}
+  .hero{padding:24px 16px 22px}
+  .hero h1{font-size:23px}
+  main{padding:12px 16px}
+  .bar,.tools-in{padding:10px 16px}
+  .action-in{padding:11px 16px;gap:8px}
+  .modal h2{padding:15px 16px 8px}
+  .modal .body{padding:0 16px}
+  .modal .foot{padding:14px 16px 16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hero wrap" id="hero">
+    <div class="hero-top">
+      <div>
+        <h1 data-i18n="app.title">GitHub Repo Cleaner</h1>
+        <p class="lede" data-i18n="app.lede"></p>
+      </div>
+      <span class="spacer"></span>
+      <span class="utils" id="utils">
+        <button class="btn ghost sm" id="lang" title="Language / 语言">EN</button>
+        <button class="btn ghost sm" id="theme" title="Theme">◐</button>
+      </span>
+    </div>
+    <div class="connect">
+      <input id="token" type="password" placeholder="ghp_… / github_pat_…" autocomplete="off" spellcheck="false" aria-label="GitHub token">
+      <button class="btn" id="go" data-i18n="act.connect"></button>
+      <button class="btn ghost" id="demo" data-i18n="act.demo"></button>
+    </div>
+    <div class="err" id="err" hidden role="alert"></div>
+    <div class="trust" id="trust"></div>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <div class="bar wrap" id="bar">
+    <span class="who"><span class="mono-badge" id="avatar" aria-hidden="true"></span><span id="login"></span></span>
+    <span class="demo-flag" id="demoFlag" hidden data-i18n="demo.flag"></span>
+    <span class="tabs" role="tablist">
+      <button id="tabR" class="on" role="tab" aria-selected="true" data-i18n="tab.repos"></button>
+      <button id="tabP" role="tab" aria-selected="false" data-i18n="tab.packages"></button>
+    </span>
+    <span class="meta" id="stat"></span>
+    <span class="spacer"></span>
+    <button class="btn ghost sm" id="perms" data-i18n="act.perms"></button>
+    <button class="btn ghost sm" id="scan" data-i18n="act.scan"></button>
+    <button class="btn ghost sm" id="refresh" data-i18n="act.refresh"></button>
+    <button class="btn ghost sm" id="logout" data-i18n="act.logout"></button>
+    <span id="utilsSlot"></span>
+  </div>
+</header>
+
+<div class="tools" id="tools">
+  <div class="tools-in wrap">
+    <input type="search" id="q" placeholder="" aria-label="Search">
+    <select id="fOwner" aria-label="Owner"></select>
+    <select id="fVis" aria-label="Visibility"></select>
+    <select id="fKind" aria-label="Kind"></select>
+    <select id="fAge" aria-label="Age"></select>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="btn ghost sm" id="selAll" data-i18n="act.selAll"></button>
+    <button class="btn ghost sm" id="selInv" data-i18n="act.selInv"></button>
+    <button class="btn ghost sm" id="selNone" data-i18n="act.selNone"></button>
+    <span class="count" id="count"></span>
+  </div>
+</div>
+
+<main>
+  <div class="stats" id="stats"></div>
+  <p class="notice" id="notice" hidden aria-live="polite"></p>
+  <div id="table"></div>
+  <div class="pager" id="pager"></div>
+</main>
+
+<footer>
+  <span id="footNote"></span>
+  <span class="spacer"></span>
+  <button class="btn link" id="keysBtn" data-i18n="act.keys"></button>
+  <a href="https://github.com/always1ov/github-repo-cleaner" target="_blank" rel="noopener noreferrer">Source</a>
+</footer>
+
+<div class="action" id="action">
+  <div class="action-in">
+    <div>
+      <strong id="aCount"></strong>
+      <span class="sub" id="aSize"></span>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn ghost sm" id="aClear" data-i18n="act.cancel"></button>
+    <span class="acts on" id="actsR">
+      <button class="btn ghost sm" id="export" data-i18n="act.export"></button>
+      <button class="btn ghost sm" id="backup" data-i18n="act.backup"></button>
+      <button class="btn ghost sm" id="ticket" data-i18n="act.ticket"></button>
+      <button class="btn ghost sm" data-task="archive" data-i18n="task.archive.btn"></button>
+      <button class="btn ghost sm" data-task="unarchive" data-i18n="task.unarchive.btn"></button>
+      <button class="btn ghost sm" data-task="transfer" data-i18n="task.transfer.btn"></button>
+      <button class="btn ghost sm" data-task="private" data-i18n="task.private.btn"></button>
+      <button class="btn ghost sm" data-task="public" data-i18n="task.public.btn"></button>
+      <button class="btn danger sm" data-task="delete" data-i18n="task.delete.btn"></button>
+    </span>
+    <span class="acts" id="actsP">
+      <button class="btn ghost sm" data-task="prune" data-i18n="task.prune.btn"></button>
+      <button class="btn danger sm" data-task="pkgDelete" data-i18n="task.pkgDelete.btn"></button>
+    </span>
+  </div>
+</div>
+
+<div class="mask" id="mask" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal">
+    <h2 id="mTitle"></h2>
+    <div class="body" id="mBody"></div>
+    <div class="foot" id="mFoot"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* <core> — pure logic, no DOM access. Extracted verbatim by test/core.test.mjs. */
+
+const I18N = {
+en: {
+  'app.title':'GitHub Repo Cleaner',
+  'app.lede':'Paste a GitHub token to list every repository and package you own. Select in bulk, then transfer to an org, flip visibility, archive, prune old package versions, or delete for good. Every action lists exactly what it will touch before it runs.',
+  'trust.1t':'Nothing leaves your browser',
+  'trust.1d':'A Content-Security-Policy in the page allows exactly one network destination: api.github.com. No analytics, no backend, no CDN.',
+  'trust.2t':'The token is never stored',
+  'trust.2d':'It lives in a JavaScript variable for the life of the tab. No localStorage, no cookies, no URL. Reload and it is gone.',
+  'trust.3t':'One file you can read',
+  'trust.3d':'The whole tool is a single HTML file with no dependencies and no build step. Download it and run it offline from your disk.',
+  'hint.scopes':'A classic token works best. Tick <code>repo</code>, <code>delete_repo</code>, <code>read:org</code>, <code>read:packages</code>, <code>delete:packages</code>. The Packages API still only accepts classic tokens — a fine-grained token can manage repositories but cannot see packages.',
+  'hint.storage':'Only your language, theme and page-size preferences are saved locally. Create a token at <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">github.com/settings/tokens</a>, and revoke it there when you are done.',
+
+  'act.connect':'Read my account','act.connecting':'Reading…','act.demo':'Try the demo',
+  'act.perms':'Token scopes','act.scan':'Scan for blocked',
+  'act.refresh':'Reload','act.logout':'Sign out',
+  'act.selAll':'Select all matching','act.selInv':'Invert','act.selNone':'Clear',
+  'act.cancel':'Cancel','act.export':'Export','act.backup':'Backup script','act.ticket':'Support ticket',
+  'act.keys':'Keyboard shortcuts','act.close':'Close','act.back':'Back','act.copy':'Copy','act.copied':'Copied',
+  'act.download':'Download','act.stop':'Stop','act.stopping':'Stopping…','act.done':'Done','act.gotIt':'Got it',
+  'act.fill':'Fill in','act.openSupport':'Open support page',
+
+  'tab.repos':'Repositories','tab.packages':'Packages',
+  'search.ph':'Search name or description  ( / )',
+
+  'f.owner.all':'All accounts',
+  'f.vis.both':'Public and private','f.vis.all':'Any visibility','f.vis.public':'Public only','f.vis.private':'Private only','f.vis.internal':'Internal only',
+  'f.kind.all':'Any kind','f.kind.source':'Sources only','f.kind.fork':'Forks only','f.kind.archived':'Archived only','f.kind.empty':'Empty only','f.kind.nostar':'No stars','f.kind.template':'Templates only','f.kind.stuck':'Undeletable only',
+  'f.age.all':'Any age','f.age.fresh':'Pushed this year','f.age.1y':'Untouched 1+ year','f.age.2y':'Untouched 2+ years','f.age.3y':'Untouched 3+ years',
+
+  'stats.repos':'repositories','stats.size':'on disk','stats.private':'private','stats.forks':'forks','stats.archived':'archived','stats.stale':'untouched 1y+','stats.empty':'empty','stats.pkgs':'packages','stats.versions':'versions',
+  'stats.repos.one':'repository','stats.forks.one':'fork','stats.pkgs.one':'package','stats.versions.one':'version',
+
+  'col.repo':'Repository','col.lang':'Language','col.size':'Size','col.stars':'Stars','col.pushed':'Last push',
+  'col.pkg':'Package','col.type':'Type','col.versions':'Versions','col.updated':'Updated','col.status':'Status',
+
+  'tag.public':'public','tag.private':'private','tag.internal':'internal','tag.fork':'fork','tag.archived':'archived','tag.template':'template','tag.notadmin':'not an admin','tag.blocked':'blocked by GitHub · {reason}','tag.failed':'delete failed · {status}','tag.from':'from {repo}',
+
+  'empty.repos':'This account has no repositories.','empty.pkgs':'No packages found.','empty.pkgsLoading':'Reading packages…','empty.filter':'Nothing matches these filters.',
+  'count.showing':'{shown} of {total} shown · {sel} selected',
+  'sel.repos':'{n} repositories selected','sel.pkgs':'{n} packages selected',
+  'sel.repos.one':'{n} repository selected','sel.pkgs.one':'{n} package selected',
+  'sel.sizeRepos':'{size} total · {pub} public, {priv} private','sel.sizePkgs':'{n} versions in total',
+  'sel.sizePkgs.one':'{n} version in total',
+  'bar.repos':'{n} repositories','bar.pkgs':'{n} packages','bar.orgs':'{n} orgs','bar.rate':'{n} API calls left',
+  'bar.repos.one':'{n} repository','bar.pkgs.one':'{n} package','bar.orgs.one':'{n} org','bar.noDelete':'token lacks delete_repo — deletes will fail',
+
+  'notice.scanning':'Checking one by one…  {done} / {total}, {found} blocked so far',
+  'notice.blockedFound':'Found {n} repositories blocked by GitHub. Neither the API nor the settings page can remove them — use “Support ticket” to hand them to GitHub Support.',
+  'notice.blockedNone':'No blocked repositories found.',
+  'notice.pkgWarn':'Cannot read packages: the token is missing read:packages, or it is a fine-grained token (the Packages API only supports classic tokens).',
+  'notice.pkgFail':'Failed to read packages: {msg}',
+  'notice.pageCap':'Stopped at {n} items — this account has more than one page limit allows. Narrow the list with filters if something is missing.',
+  'notice.demo':'Demo mode: everything below is made up and no request ever reaches GitHub. Actions run against the fake data so you can see how they behave.',
+
+  'pager.page':'Page {page} / {pages}','pager.prev':'Previous','pager.next':'Next','pager.size':'{n} per page','pager.all':'All',
+
+  'task.delete.btn':'Delete','task.delete.title':'Delete {n} repositories','task.delete.title.one':'Delete {n} repository','task.delete.verb':'Delete',
+  'task.delete.note':'These repositories and their issues, releases, wikis and access settings are gone permanently. GitHub offers no undo. If you may want the code later, generate a backup script first.',
+  'task.delete.ok':'deleted',
+  'task.transfer.btn':'Transfer','task.transfer.title':'Transfer {n} repositories','task.transfer.title.one':'Transfer {n} repository','task.transfer.verb':'Start transfer',
+  'task.transfer.note':'The target owner takes ownership; the old URL redirects automatically. You need permission to create repositories there, and a name collision fails the transfer.',
+  'task.transfer.field':'Target organization or account','task.transfer.ok':'transfer queued → {target}',
+  'task.private.btn':'Make private','task.private.title':'Make {n} repositories private','task.private.title.one':'Make {n} repository private','task.private.verb':'Make private',
+  'task.private.note':'Going private kills the forks, the GitHub Pages site and all anonymous access. Stars are kept.',
+  'task.private.skip':'already private','task.private.ok':'now private',
+  'task.public.btn':'Make public','task.public.title':'Make {n} repositories public','task.public.title.one':'Make {n} repository public','task.public.verb':'Make public',
+  'task.public.note':'Going public exposes the full commit history, including files that were deleted later but still exist in history.',
+  'task.public.ack':'I confirm these repositories hold no keys, tokens or anything else that must stay private — once public, every commit is readable by anyone and by crawlers.',
+  'task.public.skip':'already public','task.public.ok':'now public',
+  'task.archive.btn':'Archive','task.archive.title':'Archive {n} repositories','task.archive.title.one':'Archive {n} repository','task.archive.verb':'Archive',
+  'task.archive.note':'Archiving makes a repository read-only while keeping it visible. It is fully reversible — a good first step when you are not sure you want to delete.',
+  'task.archive.skip':'already archived','task.archive.ok':'archived',
+  'task.unarchive.btn':'Unarchive','task.unarchive.title':'Unarchive {n} repositories','task.unarchive.title.one':'Unarchive {n} repository','task.unarchive.verb':'Unarchive',
+  'task.unarchive.note':'Restores write access to archived repositories.',
+  'task.unarchive.skip':'not archived','task.unarchive.ok':'unarchived',
+  'task.prune.btn':'Prune versions','task.prune.title':'Prune old versions of {n} packages','task.prune.title.one':'Prune old versions of {n} package','task.prune.verb':'Start pruning',
+  'task.prune.note':'Keeps the newest N versions by creation date and deletes the rest. If every version of a package goes, the package disappears with them.',
+  'task.prune.ack':'I understand deleted versions cannot be restored and that image tags still referenced by a deployment may break.',
+  'task.prune.field':'Keep newest versions','task.prune.skip':'too few versions to prune',
+  'task.prune.ok':'pruned {n} versions','task.prune.ok0':'nothing to prune',
+  'task.pkgDelete.btn':'Delete packages','task.pkgDelete.title':'Delete {n} packages','task.pkgDelete.title.one':'Delete {n} package','task.pkgDelete.verb':'Delete',
+  'task.pkgDelete.note':'The whole package and every one of its versions is removed. GitHub refuses API deletion for public packages with more than 5000 downloads.',
+  'task.pkgDelete.ok':'deleted',
+  'task.skipArchived':'archived, read-only',
+
+  'ack.delete':'I confirm the items listed above can be deleted and that anything worth keeping is already backed up.',
+  'confirm.word':'Type DELETE',
+  'task.none.title':'Nothing to do here','task.none.body':'The selected items {reason}.','task.none.reason':'do not apply to this action',
+  'task.skipped':'{n} more will be skipped ({why}).','task.skipped.one':'{n} more will be skipped ({why}).',
+  'task.preflightDelete':'This token has no delete_repo scope, so every delete below will fail. Add it in <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">token settings</a>, then hit Reload.',
+
+  'run.title':'Running: {title}','run.tip':'In progress — keep this page open.',
+  'run.done':'Finished','run.doneFail':'Finished with failures','run.stopped':'Stopped',
+  'run.summary':'{ok} succeeded{failPart}{skipPart}.','run.failPart':', {n} failed','run.skipPart':', {n} skipped',
+  'run.transferNote':' GitHub processes transfers asynchronously; reload in a moment to confirm.',
+  'run.report':'Download report (CSV)','run.waiting':'Rate limited — waiting {s}s…','run.retry':'Retrying ({n})…',
+  'run.processing':'working…',
+
+  'err.noToken':'Paste a token first.','err.badToken':'That token is invalid or expired.','err.load':'Could not read the account: {msg}',
+  'err.404':'not found, or you have no access','err.403':'not permitted: {msg}','err.451':'blocked by GitHub{reason} — only Support can delete it',
+  'err.net':'network error — check your connection','err.aborted':'stopped by you',
+  'err.rateLimit':'API rate limit reached; it resets at {time}',
+  'err.secondary':'GitHub secondary rate limit — slow down and retry later',
+  'err.needs':'endpoint needs: {need}; token has: {have}','err.unknownScopes':'unknown',
+  'advice.fine':'You are using a fine-grained token: set Repository permissions → Administration to Read and write, make sure the token covers this repository, and have an org admin approve it for org-owned repositories.',
+  'advice.classic':'You are using a classic token with scopes [{scopes}]. Deleting a repository requires delete_repo; update the token, then hit Reload.',
+
+  'perm.title':'What this token can do','perm.intro':'Read from the token itself, before anything goes wrong.',
+  'perm.kindClassic':'Classic token','perm.kindFine':'Fine-grained token','perm.kind':'Type',
+  'perm.scopes':'Scopes','perm.cap.list':'List repositories','perm.cap.write':'Change visibility / archive','perm.cap.delete':'Delete repositories','perm.cap.transfer':'Transfer repositories','perm.cap.orgs':'See organizations','perm.cap.pkgRead':'List packages','perm.cap.pkgDelete':'Delete packages',
+  'perm.yes':'yes','perm.no':'no — needs {need}','perm.maybe':'depends on token settings',
+  'perm.fineNote':'Fine-grained tokens do not report their permissions over the API, so these are best guesses. Administration: Read and write covers delete, transfer and visibility; packages are not supported at all.',
+
+  'ticket.title':'Deletion ticket · {n} repositories','ticket.title.one':'Deletion ticket · {n} repository',
+  'ticket.intro':'GitHub has no API for filing support tickets, so here is the body, ready to paste. Subject: “Request to delete repositories I cannot remove”. {blocked} blocked, {failed} failed to delete.',
+  'ticket.fromSel':'(Built from your current selection.)','ticket.fromAll':'(Nothing selected, so this covers every repository that could not be deleted.)',
+  'ticket.warn403':'{n} of these failed with 403 while your token has no delete_repo scope — Support will just tell you to fix the token. Add the scope, reload, and try the delete again; only what still fails is worth a ticket.',
+  'ticket.none.title':'Nothing to report yet',
+  'ticket.none.body':'No undeletable repositories found so far. Run “Scan for blocked” to check them all, or try a delete — anything that fails is recorded automatically. You can also just select the repositories you want to hand over.',
+
+  'backup.title':'Backup script · {n} repositories','backup.title.one':'Backup script · {n} repository',
+  'backup.intro':'Run this before deleting anything. It mirrors each selected repository into a local folder, including all branches and tags.',
+  'backup.note':'Private repositories need credentials: run it with a token in your git credential helper, or use gh auth login first.',
+  'export.title':'Export {n} rows','export.title.one':'Export {n} row','export.intro':'A snapshot of what is selected, for your records.',
+  'export.sel':'Nothing is selected, so this exports everything currently matching the filters.',
+
+  'keys.title':'Keyboard shortcuts',
+  'keys.search':'Focus search','keys.all':'Select everything matching','keys.none':'Clear selection','keys.esc':'Close dialog / clear selection','keys.shift':'Range-select rows','keys.help':'This list',
+
+  'demo.flag':'DEMO','demo.simFail':'simulated failure for demonstration',
+  'theme.auto':'Theme: follow system','theme.light':'Theme: light','theme.dark':'Theme: dark',
+  'foot.note':'Runs entirely in your browser · MIT licensed'
+},
+zh: {
+  'app.title':'GitHub 仓库清理台',
+  'app.lede':'粘贴一个 GitHub 令牌，列出你名下的仓库和软件包。勾选后批量转移到组织、切换公开私有、归档、清理镜像旧版本，或者一次删干净。每个动作执行前都会逐条列出来给你确认。',
+  'trust.1t':'东西出不了你的浏览器',
+  'trust.1d':'页面自带 Content-Security-Policy，只允许一个网络目的地：api.github.com。没有统计，没有后端，没有 CDN。',
+  'trust.2t':'令牌不落任何存储',
+  'trust.2d':'它只活在这个标签页的一个变量里。不写 localStorage，不写 cookie，不进地址栏。刷新就没了。',
+  'trust.3t':'一个能读完的文件',
+  'trust.3d':'整个工具是一个 HTML 文件，无依赖、无构建。下载下来双击打开，离线也能用。',
+  'hint.scopes':'建议用经典令牌，勾选 <code>repo</code>、<code>delete_repo</code>、<code>read:org</code>、<code>read:packages</code>、<code>delete:packages</code>。Packages 接口目前仍然只认经典令牌，细粒度令牌能管仓库但读不到软件包。',
+  'hint.storage':'本地只保存语言、主题和每页条数这三项偏好。到 <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">github.com/settings/tokens</a> 建令牌，用完记得回去吊销。',
+
+  'act.connect':'读取','act.connecting':'读取中…','act.demo':'看看演示',
+  'act.perms':'令牌权限','act.scan':'检测封禁仓库',
+  'act.refresh':'重新读取','act.logout':'退出',
+  'act.selAll':'选中全部结果','act.selInv':'反选','act.selNone':'清空勾选',
+  'act.cancel':'取消','act.export':'导出清单','act.backup':'备份脚本','act.ticket':'生成删除工单',
+  'act.keys':'快捷键','act.close':'关闭','act.back':'返回','act.copy':'复制','act.copied':'已复制',
+  'act.download':'下载','act.stop':'停止','act.stopping':'停止中…','act.done':'完成','act.gotIt':'知道了',
+  'act.fill':'填入','act.openSupport':'打开支持页',
+
+  'tab.repos':'仓库','tab.packages':'软件包',
+  'search.ph':'搜索名称或描述  ( / )',
+
+  'f.owner.all':'全部账号',
+  'f.vis.both':'公开与私有','f.vis.all':'全部可见性','f.vis.public':'仅公开','f.vis.private':'仅私有','f.vis.internal':'仅内部',
+  'f.kind.all':'全部类型','f.kind.source':'仅原创','f.kind.fork':'仅 fork','f.kind.archived':'仅已归档','f.kind.empty':'仅空仓库','f.kind.nostar':'无人 star','f.kind.template':'仅模板','f.kind.stuck':'仅删不掉的',
+  'f.age.all':'不限时间','f.age.fresh':'今年提交过','f.age.1y':'一年没动','f.age.2y':'两年没动','f.age.3y':'三年没动',
+
+  'stats.repos':'个仓库','stats.size':'占用','stats.private':'个私有','stats.forks':'个 fork','stats.archived':'个已归档','stats.stale':'个一年没动','stats.empty':'个空仓库','stats.pkgs':'个软件包','stats.versions':'个版本',
+
+  'col.repo':'仓库','col.lang':'语言','col.size':'体积','col.stars':'Star','col.pushed':'最后提交',
+  'col.pkg':'软件包','col.type':'类型','col.versions':'版本数','col.updated':'更新时间','col.status':'状态',
+
+  'tag.public':'公开','tag.private':'私有','tag.internal':'内部','tag.fork':'fork','tag.archived':'已归档','tag.template':'模板','tag.notadmin':'非管理员','tag.blocked':'已被封禁 · {reason}','tag.failed':'删除失败 · {status}','tag.from':'来自 {repo}',
+
+  'empty.repos':'这个账号下还没有仓库。','empty.pkgs':'没有找到软件包。','empty.pkgsLoading':'正在读取软件包…','empty.filter':'没有符合筛选条件的项目，换个条件试试。',
+  'count.showing':'显示 {shown} / 共 {total} 个 · 已选 {sel}',
+  'sel.repos':'已选 {n} 个仓库','sel.pkgs':'已选 {n} 个软件包',
+  'sel.sizeRepos':'合计 {size} · 公开 {pub} 个，私有 {priv} 个','sel.sizePkgs':'合计 {n} 个版本',
+  'bar.repos':'{n} 个仓库','bar.pkgs':'{n} 个软件包','bar.orgs':'{n} 个组织','bar.rate':'剩余请求 {n}','bar.noDelete':'令牌缺少 delete_repo，删除会全部失败',
+
+  'notice.scanning':'正在逐个检测…  {done} / {total}，已发现 {found} 个被封禁',
+  'notice.blockedFound':'发现 {n} 个被 GitHub 封禁的仓库。接口和设置页都删不掉，用「生成删除工单」把它们提给支持团队。',
+  'notice.blockedNone':'没有被封禁的仓库。',
+  'notice.pkgWarn':'读不到软件包：令牌缺少 read:packages 权限，或者用的是细粒度令牌（Packages 接口只支持经典令牌）。',
+  'notice.pkgFail':'读取软件包失败：{msg}',
+  'notice.pageCap':'只读到了 {n} 条就停下了，这个账号的数量超过了单次翻页上限。如果发现缺东西，用筛选缩小范围再看。',
+  'notice.demo':'演示模式：下面的数据全是编的，不会有任何请求发往 GitHub。各种操作会在假数据上真的跑一遍，方便你看清效果。',
+
+  'pager.page':'第 {page} / {pages} 页','pager.prev':'上一页','pager.next':'下一页','pager.size':'每页 {n} 条','pager.all':'全部',
+
+  'task.delete.btn':'删除','task.delete.title':'删除 {n} 个仓库','task.delete.verb':'删除',
+  'task.delete.note':'这些仓库连同它们的 issue、release、wiki 和访问设置会被永久删除，GitHub 不提供撤销。以后还可能要用代码的话，先生成一份备份脚本。',
+  'task.delete.ok':'已删除',
+  'task.transfer.btn':'转移到组织','task.transfer.title':'转移 {n} 个仓库','task.transfer.verb':'开始转移',
+  'task.transfer.note':'转移后仓库归目标方所有，原地址会自动跳转。你在目标方需要有创建仓库的权限；同名仓库会转移失败。',
+  'task.transfer.field':'目标组织或账号','task.transfer.ok':'已提交转移 → {target}',
+  'task.private.btn':'设为私有','task.private.title':'把 {n} 个仓库设为私有','task.private.verb':'设为私有',
+  'task.private.note':'设为私有后，仓库的 fork、GitHub Pages 站点和匿名访问会一并失效，star 数保留。',
+  'task.private.skip':'已经是私有','task.private.ok':'已设为私有',
+  'task.public.btn':'设为公开','task.public.title':'把 {n} 个仓库设为公开','task.public.verb':'设为公开',
+  'task.public.note':'公开会暴露完整的提交历史，包括曾经删掉但仍然留在历史里的文件。',
+  'task.public.ack':'我确认这些仓库里没有密钥、令牌或其他不能公开的内容——公开后全部提交历史都能被任何人和爬虫读取。',
+  'task.public.skip':'已经是公开','task.public.ok':'已设为公开',
+  'task.archive.btn':'归档','task.archive.title':'归档 {n} 个仓库','task.archive.verb':'归档',
+  'task.archive.note':'归档会把仓库变成只读，但仍然保留可见。这一步随时能撤销——拿不准要不要删的时候，先归档。',
+  'task.archive.skip':'已经归档','task.archive.ok':'已归档',
+  'task.unarchive.btn':'取消归档','task.unarchive.title':'取消 {n} 个仓库的归档','task.unarchive.verb':'取消归档',
+  'task.unarchive.note':'把归档的仓库恢复成可写。',
+  'task.unarchive.skip':'本来就没归档','task.unarchive.ok':'已取消归档',
+  'task.prune.btn':'清理旧版本','task.prune.title':'清理 {n} 个软件包的旧版本','task.prune.verb':'开始清理',
+  'task.prune.note':'按创建时间保留最新的若干个版本，其余全部删除。如果一个包的版本被全部删掉，这个包本身也会消失。',
+  'task.prune.ack':'我知道被删除的版本无法恢复，正在被部署引用的镜像标签可能会失效。',
+  'task.prune.field':'保留最新几个版本','task.prune.skip':'版本数不足，无需清理',
+  'task.prune.ok':'已清理 {n} 个版本','task.prune.ok0':'没有可清理的版本',
+  'task.pkgDelete.btn':'删除软件包','task.pkgDelete.title':'删除 {n} 个软件包','task.pkgDelete.verb':'删除',
+  'task.pkgDelete.note':'整个软件包连同它的所有版本会被删除。公开且下载量超过 5000 次的包，GitHub 不允许通过接口删除。',
+  'task.pkgDelete.ok':'已删除',
+  'task.skipArchived':'已归档，只读',
+
+  'ack.delete':'我确认上面这些都可以删除，并且需要留下的内容已经备份。',
+  'confirm.word':'输入 DELETE',
+  'task.none.title':'没有可执行的项目','task.none.body':'所选项目{reason}。','task.none.reason':'不适用这个操作',
+  'task.skipped':'另有 {n} 个会跳过（{why}）。',
+  'task.preflightDelete':'当前令牌没有 delete_repo 权限，这批删除会全部失败。先到 <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">令牌设置</a> 补上权限，再点顶部的重新读取。',
+
+  'run.title':'正在执行：{title}','run.tip':'进行中，请勿关闭页面。',
+  'run.done':'执行完成','run.doneFail':'执行完成，有失败项','run.stopped':'已停止',
+  'run.summary':'成功 {ok} 个{failPart}{skipPart}。','run.failPart':'，失败 {n} 个','run.skipPart':'，跳过 {n} 个',
+  'run.transferNote':' 转移由 GitHub 异步处理，稍后重新读取即可确认。',
+  'run.report':'下载执行报告 (CSV)','run.waiting':'触发限流，等待 {s} 秒…','run.retry':'重试中（第 {n} 次）…',
+  'run.processing':'处理中…',
+
+  'err.noToken':'先粘贴一个令牌。','err.badToken':'令牌无效或已过期，检查后重试。','err.load':'读取失败：{msg}',
+  'err.404':'不存在或无权访问','err.403':'权限不足：{msg}','err.451':'已被 GitHub 封禁{reason}，只能联系支持删除',
+  'err.net':'网络错误，检查一下连接','err.aborted':'你主动停止了',
+  'err.rateLimit':'触发接口限流，{time} 才恢复',
+  'err.secondary':'触发 GitHub 二级限流，慢一点再试',
+  'err.needs':'接口需要：{need}；令牌持有：{have}','err.unknownScopes':'未知',
+  'advice.fine':'你用的是细粒度令牌：需要把 Repository permissions → Administration 设为 Read and write，并确认令牌的仓库访问范围覆盖了这个仓库；组织下的仓库还要组织管理员批准该令牌。',
+  'advice.classic':'你用的是经典令牌，当前权限为 [{scopes}]。删除仓库必须勾选 delete_repo，改完权限重新读取即可。',
+
+  'perm.title':'这个令牌能做什么','perm.intro':'直接从令牌本身读出来的，不用等出错才知道。',
+  'perm.kindClassic':'经典令牌','perm.kindFine':'细粒度令牌','perm.kind':'类型',
+  'perm.scopes':'权限范围','perm.cap.list':'列出仓库','perm.cap.write':'改可见性 / 归档','perm.cap.delete':'删除仓库','perm.cap.transfer':'转移仓库','perm.cap.orgs':'看到组织','perm.cap.pkgRead':'列出软件包','perm.cap.pkgDelete':'删除软件包',
+  'perm.yes':'可以','perm.no':'不行，缺 {need}','perm.maybe':'取决于令牌设置',
+  'perm.fineNote':'细粒度令牌不会通过接口报告自己的权限，所以上面是推测。Administration 设为 Read and write 才能删除、转移和改可见性；软件包则完全不支持。',
+
+  'ticket.title':'删除工单 · {n} 个仓库',
+  'ticket.intro':'GitHub 不提供提交工单的接口，所以这里把正文写好了：复制后打开支持页，Subject 填 Request to delete repositories I cannot remove，正文粘贴即可。其中封禁 {blocked} 个、删除失败 {failed} 个。',
+  'ticket.fromSel':'（按你当前的勾选生成。）','ticket.fromAll':'（未勾选，用的是全部删不掉的仓库。）',
+  'ticket.warn403':'这里面有 {n} 个是 403 失败的，而你的令牌本来就没有 delete_repo 权限——客服会让你自己补权限再删。建议先补上权限，重新读取后再删一次，剩下还失败的才值得提工单。',
+  'ticket.none.title':'没有需要提交的仓库',
+  'ticket.none.body':'还没有发现删不掉的仓库。点「检测封禁仓库」扫一遍，或者先试一次删除——失败的会自动记下来。也可以直接勾选想交给客服的仓库再来。',
+
+  'backup.title':'备份脚本 · {n} 个仓库',
+  'backup.intro':'删之前先跑这个。它会把每个勾选的仓库镜像到本地目录，分支和标签都在。',
+  'backup.note':'私有仓库需要凭据：先 gh auth login，或者把令牌配进 git 的凭据助手再跑。',
+  'export.title':'导出 {n} 条','export.intro':'把当前勾选的内容存一份，留个底。',
+  'export.sel':'没有勾选任何项，导出的是当前筛选出来的全部内容。',
+
+  'keys.title':'快捷键',
+  'keys.search':'跳到搜索框','keys.all':'选中全部结果','keys.none':'清空勾选','keys.esc':'关闭弹窗 / 清空勾选','keys.shift':'范围选择','keys.help':'打开这个列表',
+
+  'demo.flag':'演示','demo.simFail':'这是演示用的模拟失败',
+  'theme.auto':'主题：跟随系统','theme.light':'主题：浅色','theme.dark':'主题：深色',
+  'foot.note':'全程在浏览器里跑 · MIT 许可'
+}
+};
+
+// Count-aware lookup: English gets a "<key>.one" singular when one exists.
+// Chinese has no plural inflection, so it simply never defines those keys.
+function tn(lang, key, n, vars) {
+  const dict = I18N[lang] || I18N.en;
+  const singular = key + '.one';
+  return t(lang, n === 1 && dict[singular] ? singular : key, Object.assign({ n }, vars));
+}
+function t(lang, key, vars) {
+  const dict = I18N[lang] || I18N.en;
+  let s = dict[key];
+  if (s === undefined) s = I18N.en[key];
+  if (s === undefined) return key;
+  if (!vars) return s;
+  return s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] === undefined ? m : String(vars[k])));
+}
+
+/* ---------- formatting ---------- */
+const DAY = 86400000;
+function fmtSize(kb, lang) {
+  const n = Number(kb) || 0;
+  if (n < 1024) return n + (lang === 'zh' ? ' KB' : ' KB');
+  const mb = n / 1024;
+  if (mb < 1024) return mb.toFixed(mb < 10 ? 1 : 0) + ' MB';
+  return (mb / 1024).toFixed(mb / 1024 < 10 ? 2 : 1) + ' GB';
+}
+function daysSince(iso, nowMs) {
+  if (!iso) return Infinity;
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return Infinity;
+  return Math.floor((nowMs - ms) / DAY);
+}
+function fmtDate(iso, lang, nowMs) {
+  if (!iso) return '—';
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return '—';
+  const days = Math.max(0, Math.floor((nowMs - ms) / DAY));
+  let rel;
+  if (lang === 'zh') {
+    rel = days < 1 ? '今天'
+      : days < 30 ? days + ' 天前'
+      : days < 365 ? Math.floor(days / 30) + ' 个月前'
+      : Math.floor(days / 365) + ' 年前';
+  } else {
+    rel = days < 1 ? 'today'
+      : days < 30 ? days + 'd ago'
+      : days < 365 ? Math.floor(days / 30) + 'mo ago'
+      : Math.floor(days / 365) + 'y ago';
+  }
+  return new Date(ms).toISOString().slice(0, 10) + '  ' + rel;
+}
+function fmtClock(ms) {
+  const d = new Date(ms);
+  const p = n => String(n).padStart(2, '0');
+  return p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+/* ---------- pagination ---------- */
+function parseNextLink(link) {
+  if (!link) return null;
+  for (const part of String(link).split(',')) {
+    const m = part.match(/<([^>]+)>\s*;\s*rel="?next"?/i);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+/* ---------- retry / rate limits ---------- */
+const MAX_ATTEMPTS = 4;
+const SECONDARY_RE = /secondary rate limit|abuse detection/i;
+function backoffMs(attempt, base) {
+  return Math.min((base || 1000) * Math.pow(2, attempt), 30000);
+}
+function retryPlan(info) {
+  const status = info.status | 0;
+  const h = info.headers || {};
+  const attempt = info.attempt | 0;
+  const msg = info.message || '';
+  const now = info.nowMs || 0;
+  const after = Number(h['retry-after']);
+  const give = r => ({ retry: false, waitMs: 0, reason: r });
+  if (attempt >= MAX_ATTEMPTS) return give('giveup');
+
+  if (status === 0) return { retry: true, waitMs: backoffMs(attempt, 800), reason: 'network' };
+
+  if ((status === 403 || status === 429) && h['x-ratelimit-remaining'] === '0') {
+    const reset = Number(h['x-ratelimit-reset']) * 1000;
+    const wait = Number.isFinite(reset) && reset > now ? reset - now + 1000 : 60000;
+    return wait <= 90000
+      ? { retry: true, waitMs: wait, reason: 'primary' }
+      : { retry: false, waitMs: wait, reason: 'primary', resetAt: reset };
+  }
+  if ((status === 403 || status === 429) && SECONDARY_RE.test(msg)) {
+    const wait = Number.isFinite(after) && after > 0 ? after * 1000 : backoffMs(attempt, 5000);
+    return { retry: true, waitMs: Math.min(wait, 60000), reason: 'secondary' };
+  }
+  if (status === 429) {
+    const wait = Number.isFinite(after) && after > 0 ? after * 1000 : backoffMs(attempt, 2000);
+    return { retry: true, waitMs: Math.min(wait, 60000), reason: 'secondary' };
+  }
+  if (status >= 500 && status <= 599) return { retry: true, waitMs: backoffMs(attempt, 1000), reason: 'server' };
+  return give('fatal');
+}
+
+/* ---------- identity ---------- */
+const pkgKey = p => p.package_type + ':' + p.owner.login + '/' + p.name;
+const keyOf = (view, x) => (view === 'repos' ? x.full_name : pkgKey(x));
+const isAdmin = r => !!(r.permissions && r.permissions.admin);
+
+/* ---------- filtering + sorting ---------- */
+function passesRepo(r, f, nowMs) {
+  const q = (f.q || '').trim().toLowerCase();
+  if (q && !((r.full_name || '').toLowerCase().includes(q) || (r.description || '').toLowerCase().includes(q))) return false;
+  if (f.owner && f.owner !== 'all' && r.owner.login !== f.owner) return false;
+  if (f.vis === 'public' && r.private) return false;
+  if (f.vis === 'private' && !r.private) return false;
+  switch (f.kind) {
+    case 'source': if (r.fork || r.archived) return false; break;
+    case 'fork': if (!r.fork) return false; break;
+    case 'archived': if (!r.archived) return false; break;
+    case 'template': if (!r.is_template) return false; break;
+    case 'empty': if ((r.size || 0) > 0) return false; break;
+    case 'nostar': if ((r.stargazers_count || 0) > 0) return false; break;
+    case 'stuck': if (!(f.isStuck && f.isStuck(r.full_name))) return false; break;
+  }
+  if (f.age && f.age !== 'all') {
+    const days = daysSince(r.pushed_at, nowMs);
+    if (f.age === 'fresh') { if (days > 365) return false; }
+    else if (!(days >= parseInt(f.age, 10) * 365)) return false;
+  }
+  return true;
+}
+function passesPkg(p, f) {
+  const q = (f.q || '').trim().toLowerCase();
+  if (q && !p.name.toLowerCase().includes(q)) return false;
+  if (f.owner && f.owner !== 'all' && p.owner.login !== f.owner) return false;
+  if (f.vis && f.vis !== 'all' && p.visibility !== f.vis) return false;
+  if (f.kind && f.kind !== 'all' && p.package_type !== f.kind) return false;
+  return true;
+}
+const TEXT_KEYS = new Set(['full_name', 'language', 'name', 'package_type']);
+const DATE_KEYS = new Set(['pushed_at', 'updated_at', 'created_at']);
+function sortList(list, key, dir) {
+  const out = list.slice();
+  out.sort((a, b) => {
+    let x = a[key], y = b[key];
+    if (TEXT_KEYS.has(key)) return String(x || '').localeCompare(String(y || '')) * dir;
+    if (DATE_KEYS.has(key)) { x = Date.parse(x) || 0; y = Date.parse(y) || 0; }
+    x = x == null ? -Infinity : x;
+    y = y == null ? -Infinity : y;
+    return (x > y ? 1 : x < y ? -1 : 0) * dir;
+  });
+  return out;
+}
+function selectItems(view, repos, pkgs, f, sort, nowMs) {
+  const list = view === 'repos'
+    ? repos.filter(r => passesRepo(r, f, nowMs))
+    : pkgs.filter(p => passesPkg(p, f));
+  return sortList(list, sort.key, sort.dir);
+}
+
+/* ---------- stats ---------- */
+function repoStats(repos, nowMs) {
+  const s = { count: repos.length, sizeKb: 0, priv: 0, forks: 0, archived: 0, stale: 0, empty: 0 };
+  for (const r of repos) {
+    s.sizeKb += r.size || 0;
+    if (r.private) s.priv++;
+    if (r.fork) s.forks++;
+    if (r.archived) s.archived++;
+    if (daysSince(r.pushed_at, nowMs) >= 365) s.stale++;
+    if (!(r.size > 0)) s.empty++;
+  }
+  return s;
+}
+
+/* ---------- token scopes ---------- */
+function scopeReport(kind, scopesStr) {
+  const fine = kind === 'fine';
+  const known = typeof scopesStr === 'string' && scopesStr !== '';
+  const has = s => known && scopesStr.split(/,\s*/).includes(s);
+  const cap = (id, need, ok) => ({ id, need, ok });
+  if (fine) {
+    return [
+      cap('list', 'Contents: Read', 'maybe'),
+      cap('write', 'Administration: Read and write', 'maybe'),
+      cap('delete', 'Administration: Read and write', 'maybe'),
+      cap('transfer', 'Administration: Read and write', 'maybe'),
+      cap('orgs', 'Organization permissions', 'maybe'),
+      cap('pkgRead', 'classic token only', false),
+      cap('pkgDelete', 'classic token only', false)
+    ];
+  }
+  const yn = s => (known ? has(s) : 'maybe');
+  return [
+    cap('list', 'repo', yn('repo')),
+    cap('write', 'repo', yn('repo')),
+    cap('delete', 'delete_repo', yn('delete_repo')),
+    cap('transfer', 'repo', yn('repo')),
+    cap('orgs', 'read:org', yn('read:org')),
+    cap('pkgRead', 'read:packages', yn('read:packages')),
+    cap('pkgDelete', 'delete:packages', yn('delete:packages'))
+  ];
+}
+function lacksDeleteScope(kind, scopesStr) {
+  return kind === 'classic' && typeof scopesStr === 'string' && scopesStr !== '' && !scopesStr.split(/,\s*/).includes('delete_repo');
+}
+
+/* ---------- exports ---------- */
+function csvCell(v) {
+  const s = v == null ? '' : String(v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function toCSV(headers, rows) {
+  return [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n');
+}
+const REPO_CSV_HEAD = ['full_name', 'owner', 'name', 'visibility', 'fork', 'archived', 'template', 'size_kb', 'stars', 'forks', 'open_issues', 'language', 'pushed_at', 'created_at', 'html_url', 'description'];
+function repoCsvRows(repos) {
+  return repos.map(r => [
+    r.full_name, r.owner.login, r.name, r.private ? 'private' : 'public',
+    r.fork ? 'yes' : 'no', r.archived ? 'yes' : 'no', r.is_template ? 'yes' : 'no',
+    r.size || 0, r.stargazers_count || 0, r.forks_count || 0, r.open_issues_count || 0,
+    r.language || '', r.pushed_at || '', r.created_at || '', r.html_url || '', r.description || ''
+  ]);
+}
+const PKG_CSV_HEAD = ['owner', 'name', 'package_type', 'visibility', 'version_count', 'repository', 'updated_at', 'html_url'];
+function pkgCsvRows(pkgs) {
+  return pkgs.map(p => [
+    p.owner.login, p.name, p.package_type, p.visibility || '', p.version_count == null ? '' : p.version_count,
+    p.repository ? p.repository.full_name : '', p.updated_at || '', p.html_url || ''
+  ]);
+}
+const RUN_CSV_HEAD = ['timestamp', 'action', 'target', 'result', 'detail'];
+
+function backupScript(repos, login) {
+  const lines = repos.map(r =>
+    'clone ' + shellQuote(r.clone_url || ('https://github.com/' + r.full_name + '.git')) + ' ' +
+    shellQuote(r.full_name.replace('/', '__') + '.git'));
+  return [
+    '#!/usr/bin/env bash',
+    '# Mirror-clone repositories before deleting them.',
+    '# Generated by GitHub Repo Cleaner for ' + (login || 'you') + ' on ' + new Date().toISOString().slice(0, 10) + '.',
+    '# Private repositories need credentials: run `gh auth login` first,',
+    '# or configure a token in your git credential helper.',
+    'set -uo pipefail',
+    '',
+    'DEST="${1:-github-backup}"',
+    'mkdir -p "$DEST"',
+    'cd "$DEST"',
+    'failed=0',
+    '',
+    'clone() {',
+    '  if [ -d "$2" ]; then echo "skip   $2 (already here)"; return 0; fi',
+    '  echo "clone  $1"',
+    '  git clone --mirror "$1" "$2" || { echo "FAILED $1"; failed=$((failed+1)); }',
+    '}',
+    '',
+    ...lines,
+    '',
+    'echo',
+    'echo "Done. $failed repositories failed. Mirrors are in $(pwd)."',
+    'echo "Restore one with: git clone <name>.git"'
+  ].join('\n') + '\n';
+}
+function shellQuote(s) {
+  return "'" + String(s).replace(/'/g, `'\\''`) + "'";
+}
+
+/* ---------- support ticket ---------- */
+function ticketBody(login, items, reasonOf) {
+  const lines = items.map(r => '- ' + r.full_name + '  (' + reasonOf(r) + ')').join('\n');
+  return `Hello,
+
+I am the owner of the repositories listed below. I cannot remove them myself: they are either disabled by GitHub and return HTTP 451 "Repository access blocked", or my deletion requests are rejected, so the settings page and the API are both unavailable to me.
+
+${lines}
+
+Please permanently delete these repositories from my account. I am not disputing any takedown and I am not filing a counter notice - I only want them removed so they no longer appear under my account.
+
+GitHub username: ${login}
+
+Thank you.`;
+}
+
+/* ---------- demo data ---------- */
+function demoData(nowMs) {
+  let seed = 20260914;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const pick = a => a[Math.floor(rnd() * a.length)];
+  const owners = ['octo-demo', 'octo-demo', 'octo-demo', 'demo-labs', 'demo-labs', 'old-startup'];
+  const langs = ['JavaScript', 'Python', 'Go', 'TypeScript', 'Rust', 'Shell', null, 'C++', 'Java'];
+  const words = ['api', 'dashboard', 'scraper', 'notes', 'bot', 'toy', 'kata', 'proto', 'fork-of-thing',
+    'website', 'dotfiles', 'cli', 'sandbox', 'course', 'homework', 'legacy', 'migrate', 'draft',
+    'experiment', 'wiki', 'blog', 'starter', 'backup', 'tmp', 'demo'];
+  const repos = [];
+  const used = new Set();
+  for (let i = 0; i < 46; i++) {
+    let name = pick(words) + (rnd() < 0.45 ? '-' + pick(words) : '');
+    while (used.has(name)) name = name + '-' + Math.floor(rnd() * 90 + 10);
+    used.add(name);
+    const owner = pick(owners);
+    const ageDays = Math.floor(Math.pow(rnd(), 0.55) * 2200);
+    const fork = rnd() < 0.3;
+    const stars = fork ? 0 : Math.floor(Math.pow(rnd(), 6) * 800);
+    repos.push({
+      full_name: owner + '/' + name, name, owner: { login: owner },
+      description: rnd() < 0.75 ? pick(['Weekend experiment, never finished.', 'Course project from years ago.',
+        'Mirror of an internal tool.', 'Static site for an event that already happened.',
+        'Scratch space. Do not trust anything in here.', 'Automation that broke when the API changed.']) : null,
+      private: rnd() < 0.4, fork, archived: rnd() < 0.12, is_template: rnd() < 0.06,
+      size: rnd() < 0.18 ? 0 : Math.floor(Math.pow(rnd(), 2.2) * 240000),
+      stargazers_count: stars, forks_count: Math.floor(stars / 6), open_issues_count: Math.floor(Math.pow(rnd(), 3) * 30),
+      language: pick(langs),
+      pushed_at: new Date(nowMs - ageDays * DAY).toISOString(),
+      created_at: new Date(nowMs - (ageDays + Math.floor(rnd() * 900)) * DAY).toISOString(),
+      html_url: 'https://github.com/' + owner + '/' + name,
+      clone_url: 'https://github.com/' + owner + '/' + name + '.git',
+      permissions: { admin: rnd() < 0.94 }
+    });
+  }
+  const pkgs = [];
+  const ptypes = ['container', 'npm', 'container', 'maven', 'nuget', 'container'];
+  for (let i = 0; i < 14; i++) {
+    const owner = pick(owners);
+    const type = pick(ptypes);
+    const name = pick(words) + '-' + pick(['service', 'lib', 'agent', 'runner', 'core']);
+    pkgs.push({
+      name, package_type: type, owner: { login: owner },
+      visibility: rnd() < 0.5 ? 'private' : 'public',
+      version_count: Math.floor(Math.pow(rnd(), 1.6) * 180) + 1,
+      updated_at: new Date(nowMs - Math.floor(rnd() * 700) * DAY).toISOString(),
+      repository: rnd() < 0.6 ? { full_name: owner + '/' + name } : null,
+      html_url: 'https://github.com/' + owner + '/packages/' + name
+    });
+  }
+  const user = { login: 'octo-demo', name: 'Demo Octocat' };
+  return { user, repos, pkgs, orgs: ['demo-labs', 'old-startup'] };
+}
+/* </core> */
+
+/* ================= app ================= */
+const API = 'https://api.github.com';
+const PKG_TYPES = ['container', 'npm', 'maven', 'rubygems', 'nuget', 'docker'];
+const PAGE_CAP = 30;
+
+const S = {
+  lang: 'en', theme: 'auto', token: '', user: null, view: 'repos', demo: false,
+  repos: [], pkgs: [], orgs: [], pkgLoaded: false, pkgWarn: '',
+  sel: new Set(), status: new Map(), gone: new Set(), blocked: new Map(), failed: new Map(),
+  notice: '', noticeKind: '', capped: 0,
+  scanning: false, busy: false, abort: null, onWait: null,
+  sort: { repos: { key: 'pushed_at', dir: -1 }, packages: { key: 'updated_at', dir: -1 } },
+  page: 1, pageSize: 100, lastIdx: null, list: [],
+  rate: '', scopes: null, tokenKind: 'classic', lastFocus: null, report: []
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const T = (k, v) => t(S.lang, k, v);
+const TN = (k, n, v) => tn(S.lang, k, n, v);
+const isRepos = () => S.view === 'repos';
+const alive = k => !S.gone.has(k);
+const usable = x => isRepos() ? (isAdmin(x) && alive(x.full_name)) : alive(pkgKey(x));
+const kOf = x => keyOf(S.view, x);
+
+/* ---------- preferences (never the token) ---------- */
+function prefGet(k, dflt) { try { const v = localStorage.getItem('grc.' + k); return v === null ? dflt : v; } catch (e) { return dflt; } }
+function prefSet(k, v) { try { localStorage.setItem('grc.' + k, v); } catch (e) {} }
+
+/* ---------- abortable sleep ---------- */
+function abortErr() { const e = new Error('aborted'); e.aborted = true; return e; }
+function sleep(ms) {
+  return new Promise((res, rej) => {
+    const sig = S.abort && S.abort.signal;
+    const done = () => { clearTimeout(id); if (sig) sig.removeEventListener('abort', onAbort); };
+    const onAbort = () => { done(); rej(abortErr()); };
+    const id = setTimeout(() => { done(); res(); }, ms);
+    if (sig) { if (sig.aborted) { onAbort(); return; } sig.addEventListener('abort', onAbort); }
+  });
+}
+
+/* ---------- HTTP ---------- */
+const HEADER_KEYS = ['link', 'retry-after', 'x-ratelimit-remaining', 'x-ratelimit-reset', 'x-oauth-scopes', 'x-accepted-oauth-scopes', 'x-accepted-github-permissions'];
+function pickHeaders(h) {
+  const out = {};
+  for (const k of HEADER_KEYS) { const v = h.get(k); if (v !== null) out[k] = v; }
+  return out;
+}
+async function ghRaw(path, opts = {}) {
+  const url = /^https?:/.test(path) ? path : API + path;
+  for (let attempt = 0; ; attempt++) {
+    let res = null, status = 0, message = '', headers = {}, data = null;
+    try {
+      res = await fetch(url, {
+        ...opts,
+        signal: S.abort ? S.abort.signal : undefined,
+        headers: {
+          Authorization: 'Bearer ' + S.token,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+          ...(opts.headers || {})
+        }
+      });
+    } catch (e) {
+      if (e && (e.name === 'AbortError' || e.aborted)) throw abortErr();
+      message = e && e.message || 'network error';
+    }
+    if (res) {
+      status = res.status;
+      headers = pickHeaders(res.headers);
+      if (headers['x-ratelimit-remaining'] !== undefined) S.rate = headers['x-ratelimit-remaining'];
+      if (headers['x-oauth-scopes'] !== undefined) S.scopes = headers['x-oauth-scopes'];
+      if (status !== 204) { try { data = await res.json(); } catch (e) {} }
+      if (res.ok) return { data, next: parseNextLink(headers.link) };
+      message = (data && (data.message || (data.errors && data.errors[0] && data.errors[0].message))) || ('HTTP ' + status);
+    }
+    const plan = retryPlan({ status, message, headers, attempt, nowMs: Date.now() });
+    if (!plan.retry) {
+      const e = new Error(message);
+      e.status = status; e.data = data; e.plan = plan;
+      e.accepted = headers['x-accepted-oauth-scopes'] || '';
+      e.perms = headers['x-accepted-github-permissions'] || '';
+      e.resetAt = plan.resetAt;
+      throw e;
+    }
+    if (S.onWait) S.onWait(plan, attempt);
+    await sleep(plan.waitMs);
+  }
+}
+const gh = async (path, opts) => (await ghRaw(path, opts)).data;
+
+async function ghAll(path) {
+  const out = [];
+  let url = path + (path.includes('?') ? '&' : '?') + 'per_page=100';
+  for (let page = 0; page < PAGE_CAP && url; page++) {
+    const r = await ghRaw(url);
+    if (!Array.isArray(r.data)) break;
+    out.push(...r.data);
+    url = r.next;
+  }
+  if (url) S.capped = Math.max(S.capped, out.length);
+  return out;
+}
+
+/* ---------- loading ---------- */
+async function loadRepos() {
+  S.user = await gh('/user');
+  S.repos = await ghAll('/user/repos?affiliation=owner,organization_member&sort=pushed');
+  S.blocked.clear(); S.failed.clear(); S.notice = ''; S.noticeKind = '';
+  try { S.orgs = (await ghAll('/user/orgs')).map(o => o.login); } catch (e) { S.orgs = []; }
+}
+async function loadPkgs() {
+  const found = [];
+  const scopes = [{ label: null }, ...S.orgs.map(o => ({ label: o }))];
+  let denied = 0, tried = 0;
+  for (const sc of scopes) {
+    for (const type of PKG_TYPES) {
+      tried++;
+      const base = sc.label ? '/orgs/' + sc.label + '/packages' : '/user/packages';
+      try { found.push(...await ghAll(base + '?package_type=' + type)); }
+      catch (e) { if (e.aborted) throw e; if (e.status === 401 || e.status === 403) denied++; }
+      await sleep(60);
+    }
+  }
+  S.pkgs = found;
+  S.pkgLoaded = true;
+  S.pkgWarn = denied === tried ? T('notice.pkgWarn') : '';
+}
+
+/* ---------- filters read from the DOM ---------- */
+function currentFilter() {
+  return {
+    q: $('#q').value,
+    owner: $('#fOwner').value,
+    vis: $('#fVis').value,
+    kind: $('#fKind').value,
+    age: isRepos() ? $('#fAge').value : 'all',
+    isStuck: name => S.blocked.has(name) || S.failed.has(name)
+  };
+}
+function filtered() {
+  return selectItems(S.view, S.repos, S.pkgs, currentFilter(), S.sort[S.view], Date.now());
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  S.list = filtered();
+  const size = S.pageSize || S.list.length || 1;
+  const pages = Math.max(1, Math.ceil(S.list.length / size));
+  if (S.page > pages) S.page = pages;
+  if (S.page < 1) S.page = 1;
+  const start = (S.page - 1) * size;
+  const slice = S.list.slice(start, start + size);
+
+  renderNotice();
+  renderStats();
+  $('#scan').hidden = !isRepos();
+  $('#ticket').hidden = !isRepos();
+  $('#backup').hidden = !isRepos();
+  $('#fAge').hidden = !isRepos();
+
+  const total = isRepos() ? S.repos.length : S.pkgs.length;
+  if (!total) {
+    $('#table').innerHTML = '<div class="empty">' + esc(isRepos() ? T('empty.repos') : (S.pkgLoaded ? T('empty.pkgs') : T('empty.pkgsLoading'))) + '</div>';
+  } else if (!S.list.length) {
+    $('#table').innerHTML = '<div class="empty">' + esc(T('empty.filter')) + '</div>';
+  } else {
+    $('#table').innerHTML = '<div class="tbl-wrap">' + (isRepos() ? repoTable(slice, start) : pkgTable(slice, start)) + '</div>';
+    bindTable();
+  }
+  renderPager(pages);
+  syncBars();
+}
+
+function renderNotice() {
+  const text = isRepos() ? S.notice : S.pkgWarn;
+  const el = $('#notice');
+  const demoNote = S.demo ? T('notice.demo') : '';
+  const capNote = S.capped ? T('notice.pageCap', { n: S.capped }) : '';
+  const parts = [demoNote, text, capNote].filter(Boolean);
+  el.hidden = !parts.length;
+  el.textContent = parts.join('  ');
+  el.className = 'notice' + (S.demo ? ' warn' : (S.noticeKind === 'bad' ? ' bad' : (text && isRepos() && S.blocked.size ? ' bad' : (text && !isRepos() ? ' warn' : ''))));
+}
+
+const STAT_FILTERS = {
+  repos: {}, private: { fVis: 'private' }, forks: { fKind: 'fork' }, archived: { fKind: 'archived' },
+  stale: { fAge: '1' }, empty: { fKind: 'empty' }
+};
+function renderStats() {
+  const box = $('#stats');
+  if (!isRepos()) {
+    const versions = S.pkgs.reduce((a, p) => a + (p.version_count || 0), 0);
+    box.innerHTML = S.pkgs.length
+      ? statCell(null, S.pkgs.length, TN('stats.pkgs', S.pkgs.length)) + statCell(null, versions, TN('stats.versions', versions))
+      : '';
+    return;
+  }
+  const s = repoStats(S.repos, Date.now());
+  if (!s.count) { box.innerHTML = ''; return; }
+  box.innerHTML =
+    statCell('repos', s.count, TN('stats.repos', s.count)) +
+    statCell(null, fmtSize(s.sizeKb, S.lang), T('stats.size')) +
+    statCell('private', s.priv, T('stats.private')) +
+    statCell('forks', s.forks, TN('stats.forks', s.forks)) +
+    statCell('archived', s.archived, T('stats.archived')) +
+    statCell('stale', s.stale, T('stats.stale')) +
+    statCell('empty', s.empty, T('stats.empty'));
+  box.querySelectorAll('button[data-stat]').forEach(b => {
+    b.onclick = () => {
+      const f = STAT_FILTERS[b.dataset.stat] || {};
+      $('#fVis').value = f.fVis || 'all';
+      $('#fKind').value = f.fKind || 'all';
+      $('#fAge').value = f.fAge || 'all';
+      $('#q').value = '';
+      S.page = 1; S.lastIdx = null;
+      render();
+    };
+  });
+}
+function statCell(id, value, label) {
+  const body = '<b>' + esc(value) + '</b><span>' + esc(label) + '</span>';
+  return id ? '<button class="stat" data-stat="' + id + '">' + body + '</button>'
+            : '<div class="stat">' + body + '</div>';
+}
+
+function head(key, label, cls) {
+  const st = S.sort[S.view];
+  const arrow = st.key === key ? (st.dir === 1 ? ' ↑' : ' ↓') : '';
+  return '<th class="s ' + (cls || '') + '" data-k="' + key + '">' + esc(label) + arrow + '</th>';
+}
+function shell(heads, rows) {
+  return '<table><thead><tr><th class="c"><input type="checkbox" id="hAll" aria-label="select page"></th>' +
+    heads + '<th>' + esc(T('col.status')) + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+function rowHtml(o) {
+  const st = S.status.get(o.key);
+  return '<tr class="' + (S.sel.has(o.key) ? 'sel ' : '') + (S.gone.has(o.key) ? 'gone' : '') + '" data-i="' + o.i + '" data-n="' + esc(o.key) + '">' +
+    '<td class="c"><input type="checkbox"' + (S.sel.has(o.key) ? ' checked' : '') + (o.can ? '' : ' disabled') + ' title="' + esc(o.tip || '') + '" aria-label="' + esc(o.key) + '"></td>' +
+    '<td><div class="nm">' + o.name + '</div>' + (o.desc ? '<div class="desc">' + esc(o.desc) + '</div>' : '') + '<div>' + o.tags + '</div></td>' +
+    o.cells + '<td>' + (st ? '<span class="st ' + st.state + '">' + esc(st.text) + '</span>' : '') + '</td></tr>';
+}
+const tag = (text, cls) => '<span class="tag' + (cls ? ' ' + cls : '') + '">' + esc(text) + '</span>';
+
+function repoTable(slice, start) {
+  const now = Date.now();
+  const rows = slice.map((r, i) => {
+    const tags = [
+      r.private ? tag(T('tag.private'), 'priv') : tag(T('tag.public')),
+      r.fork ? tag(T('tag.fork')) : '',
+      r.archived ? tag(T('tag.archived'), 'arc') : '',
+      r.is_template ? tag(T('tag.template')) : '',
+      r.stargazers_count > 0 ? tag('★ ' + r.stargazers_count, 'keep') : '',
+      isAdmin(r) ? '' : tag(T('tag.notadmin')),
+      S.blocked.has(r.full_name) ? tag(T('tag.blocked', { reason: S.blocked.get(r.full_name).reason }), 'block') : '',
+      S.failed.has(r.full_name) ? tag(T('tag.failed', { status: S.failed.get(r.full_name).status }), 'block') : ''
+    ].join('');
+    const cells =
+      '<td class="date hide-s">' + esc(r.language || '—') + '</td>' +
+      '<td class="num">' + esc(fmtSize(r.size, S.lang)) + '</td>' +
+      '<td class="num hide-s">' + (r.stargazers_count || 0) + '</td>' +
+      '<td class="date hide-s">' + esc(fmtDate(r.pushed_at, S.lang, now)) + '</td>';
+    return rowHtml({
+      i: start + i, key: r.full_name, can: usable(r), tip: isAdmin(r) ? '' : T('tag.notadmin'),
+      name: '<span class="ow">' + esc(r.owner.login) + '/</span><a href="' + esc(r.html_url) + '" target="_blank" rel="noopener noreferrer">' + esc(r.name) + '</a>',
+      desc: r.description, tags, cells
+    });
+  }).join('');
+  return shell(
+    head('full_name', T('col.repo')) + head('language', T('col.lang'), 'hide-s') +
+    head('size', T('col.size')) + head('stargazers_count', T('col.stars'), 'hide-s') +
+    head('pushed_at', T('col.pushed'), 'hide-s'), rows);
+}
+
+function pkgTable(slice, start) {
+  const now = Date.now();
+  const rows = slice.map((p, i) => {
+    const repo = p.repository ? p.repository.full_name : '';
+    const vis = p.visibility === 'public' ? tag(T('tag.public'))
+      : tag(T(p.visibility === 'internal' ? 'tag.internal' : 'tag.private'), 'priv');
+    const tags = tag(p.package_type) + vis + (repo ? tag(T('tag.from', { repo })) : '');
+    const cells =
+      '<td class="date hide-s">' + esc(p.package_type) + '</td>' +
+      '<td class="num">' + esc(p.version_count == null ? '—' : p.version_count) + '</td>' +
+      '<td class="date hide-s">' + esc(fmtDate(p.updated_at, S.lang, now)) + '</td>';
+    return rowHtml({
+      i: start + i, key: pkgKey(p), can: usable(p), tip: '',
+      name: '<span class="ow">' + esc(p.owner.login) + '/</span><a href="' + esc(p.html_url || '#') + '" target="_blank" rel="noopener noreferrer">' + esc(p.name) + '</a>',
+      desc: '', tags, cells
+    });
+  }).join('');
+  return shell(
+    head('name', T('col.pkg')) + head('package_type', T('col.type'), 'hide-s') +
+    head('version_count', T('col.versions')) + head('updated_at', T('col.updated'), 'hide-s'), rows);
+}
+
+function bindTable() {
+  const tbl = $('#table').querySelector('table');
+  if (!tbl) return;
+  tbl.querySelectorAll('thead th.s').forEach(el => el.onclick = () => {
+    const k = el.dataset.k, cur = S.sort[S.view];
+    const asc = TEXT_KEYS.has(k);
+    S.sort[S.view] = { key: k, dir: cur.key === k ? -cur.dir : (asc ? 1 : -1) };
+    S.lastIdx = null;
+    render();
+  });
+  const page = pageItems();
+  const hAll = $('#hAll');
+  const pickable = page.filter(usable);
+  hAll.checked = pickable.length > 0 && pickable.every(x => S.sel.has(kOf(x)));
+  hAll.onchange = () => {
+    pickable.forEach(x => hAll.checked ? S.sel.add(kOf(x)) : S.sel.delete(kOf(x)));
+    syncSelection();
+  };
+  tbl.querySelectorAll('tbody tr').forEach(tr => {
+    const box = tr.querySelector('input');
+    tr.onclick = e => {
+      if (e.target.tagName === 'A' || box.disabled) return;
+      const i = +tr.dataset.i, key = tr.dataset.n;
+      const on = e.target === box ? box.checked : !S.sel.has(key);
+      if (e.shiftKey && S.lastIdx !== null) {
+        const a = Math.min(S.lastIdx, i), b = Math.max(S.lastIdx, i);
+        S.list.slice(a, b + 1).forEach(x => { if (usable(x)) on ? S.sel.add(kOf(x)) : S.sel.delete(kOf(x)); });
+      } else {
+        on ? S.sel.add(key) : S.sel.delete(key);
+      }
+      S.lastIdx = i;
+      syncSelection();
+    };
+  });
+}
+function pageItems() {
+  const size = S.pageSize || S.list.length || 1;
+  const start = (S.page - 1) * size;
+  return S.list.slice(start, start + size);
+}
+/* Selection changes touch only the visible rows — a full re-render of 2000 rows per click is not acceptable. */
+function syncSelection() {
+  const tbl = $('#table').querySelector('table');
+  if (tbl) {
+    tbl.querySelectorAll('tbody tr').forEach(tr => {
+      const on = S.sel.has(tr.dataset.n);
+      tr.classList.toggle('sel', on);
+      const box = tr.querySelector('input');
+      if (box.checked !== on) box.checked = on;
+    });
+    const pickable = pageItems().filter(usable);
+    $('#hAll').checked = pickable.length > 0 && pickable.every(x => S.sel.has(kOf(x)));
+  }
+  syncBars();
+}
+
+function renderPager(pages) {
+  const el = $('#pager');
+  const sizes = [50, 100, 250, 0];
+  const opts = sizes.map(n =>
+    '<option value="' + n + '"' + (S.pageSize === n ? ' selected' : '') + '>' +
+    esc(n ? T('pager.size', { n }) : T('pager.all')) + '</option>').join('');
+  const nav = pages > 1
+    ? '<button class="btn ghost sm" id="pPrev"' + (S.page <= 1 ? ' disabled' : '') + '>' + esc(T('pager.prev')) + '</button>' +
+      '<span>' + esc(T('pager.page', { page: S.page, pages })) + '</span>' +
+      '<button class="btn ghost sm" id="pNext"' + (S.page >= pages ? ' disabled' : '') + '>' + esc(T('pager.next')) + '</button>'
+    : '';
+  el.innerHTML = S.list.length ? nav + '<select id="pSize" aria-label="page size">' + opts + '</select>' : '';
+  if (!S.list.length) return;
+  if ($('#pPrev')) $('#pPrev').onclick = () => { S.page--; S.lastIdx = null; render(); window.scrollTo({ top: 0 }); };
+  if ($('#pNext')) $('#pNext').onclick = () => { S.page++; S.lastIdx = null; render(); window.scrollTo({ top: 0 }); };
+  $('#pSize').onchange = e => { S.pageSize = +e.target.value; S.page = 1; prefSet('pageSize', S.pageSize); render(); };
+}
+
+function syncBars() {
+  const pool = isRepos() ? S.repos : S.pkgs;
+  const picked = pool.filter(x => S.sel.has(kOf(x)));
+  const total = pool.length;
+  $('#count').textContent = T('count.showing', { shown: S.list.length, total, sel: picked.length });
+  $('#aCount').textContent = TN(isRepos() ? 'sel.repos' : 'sel.pkgs', picked.length);
+  $('#aSize').textContent = isRepos()
+    ? T('sel.sizeRepos', { size: fmtSize(picked.reduce((a, r) => a + (r.size || 0), 0), S.lang), pub: picked.filter(r => !r.private).length, priv: picked.filter(r => r.private).length })
+    : TN('sel.sizePkgs', picked.reduce((a, p) => a + (p.version_count || 0), 0));
+  $('#action').classList.toggle('on', picked.length > 0 && !S.busy);
+  $('#actsR').classList.toggle('on', isRepos());
+  $('#actsP').classList.toggle('on', !isRepos());
+  const bits = [TN('bar.repos', S.repos.length)];
+  if (S.pkgLoaded) bits.push(TN('bar.pkgs', S.pkgs.length));
+  if (S.orgs.length) bits.push(TN('bar.orgs', S.orgs.length));
+  if (S.rate !== '' && !S.demo) bits.push(T('bar.rate', { n: S.rate }));
+  if (lacksDeleteScope(S.tokenKind, S.scopes)) bits.push(T('bar.noDelete'));
+  $('#stat').textContent = bits.join(' · ');
+}
+
+/* ---------- tasks ---------- */
+const repoPath = r => '/repos/' + r.owner.login + '/' + r.name;
+const pkgPath = p => (p.owner.login === S.user.login ? '/user' : '/orgs/' + p.owner.login) +
+  '/packages/' + p.package_type + '/' + encodeURIComponent(p.name);
+
+const TASKS = {
+  delete: {
+    danger: true, note: 'task.delete.note',
+    run: r => gh(repoPath(r), { method: 'DELETE' }),
+    after: r => { S.gone.add(r.full_name); S.sel.delete(r.full_name); },
+    ok: () => T('task.delete.ok')
+  },
+  transfer: {
+    note: 'task.transfer.note',
+    field: { id: 'cTarget', kind: 'org', label: 'task.transfer.field' },
+    skip: r => r.archived ? 'task.skipArchived' : null,
+    run: (r, o) => gh(repoPath(r) + '/transfer', { method: 'POST', body: JSON.stringify({ new_owner: o.target }) }),
+    after: r => { S.gone.add(r.full_name); S.sel.delete(r.full_name); },
+    ok: (r, res, o) => T('task.transfer.ok', { target: o.target })
+  },
+  private: {
+    note: 'task.private.note',
+    skip: r => r.archived ? 'task.skipArchived' : (r.private ? 'task.private.skip' : null),
+    run: r => gh(repoPath(r), { method: 'PATCH', body: JSON.stringify({ visibility: 'private' }) }),
+    after: r => { r.private = true; r.visibility = 'private'; },
+    ok: () => T('task.private.ok')
+  },
+  public: {
+    note: 'task.public.note', ack: 'task.public.ack',
+    skip: r => r.archived ? 'task.skipArchived' : (r.private ? null : 'task.public.skip'),
+    run: r => gh(repoPath(r), { method: 'PATCH', body: JSON.stringify({ visibility: 'public' }) }),
+    after: r => { r.private = false; r.visibility = 'public'; },
+    ok: () => T('task.public.ok')
+  },
+  archive: {
+    note: 'task.archive.note',
+    skip: r => r.archived ? 'task.archive.skip' : null,
+    run: r => gh(repoPath(r), { method: 'PATCH', body: JSON.stringify({ archived: true }) }),
+    after: r => { r.archived = true; },
+    ok: () => T('task.archive.ok')
+  },
+  unarchive: {
+    note: 'task.unarchive.note',
+    skip: r => r.archived ? null : 'task.unarchive.skip',
+    run: r => gh(repoPath(r), { method: 'PATCH', body: JSON.stringify({ archived: false }) }),
+    after: r => { r.archived = false; },
+    ok: () => T('task.unarchive.ok')
+  },
+  pkgDelete: {
+    pkg: true, danger: true, note: 'task.pkgDelete.note',
+    run: p => gh(pkgPath(p), { method: 'DELETE' }),
+    after: p => { S.gone.add(pkgKey(p)); S.sel.delete(pkgKey(p)); },
+    ok: () => T('task.pkgDelete.ok')
+  },
+  prune: {
+    pkg: true, note: 'task.prune.note', ack: 'task.prune.ack',
+    field: { id: 'cKeep', kind: 'number', value: 5, label: 'task.prune.field' },
+    skip: p => (p.version_count || 0) > 1 ? null : 'task.prune.skip',
+    run: async (p, o) => {
+      const keep = Math.max(1, parseInt(o.keep, 10) || 1);
+      const versions = await ghAll(pkgPath(p) + '/versions?state=active');
+      versions.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+      const doomed = versions.slice(keep);
+      for (const v of doomed) {
+        await gh(pkgPath(p) + '/versions/' + v.id, { method: 'DELETE' });
+        await sleep(120);
+      }
+      return doomed.length;
+    },
+    demoRun: (p, o) => Math.max(0, (p.version_count || 0) - Math.max(1, parseInt(o.keep, 10) || 1)),
+    after: (p, o, n) => { p.version_count = Math.max(0, (p.version_count || 0) - n); },
+    ok: (p, n) => n ? T('task.prune.ok', { n }) : T('task.prune.ok0')
+  }
+};
+const taskTitle = (kind, n) => TN('task.' + kind + '.title', n);
+
+/* ---------- modal plumbing ---------- */
+function show(title, body, foot) {
+  if (!$('#mask').classList.contains('on')) S.lastFocus = document.activeElement;
+  $('#mTitle').textContent = title;
+  $('#mBody').innerHTML = body;
+  $('#mFoot').innerHTML = foot;
+  $('#mask').classList.add('on');
+}
+function closeModal() {
+  if (S.busy) return;
+  $('#mask').classList.remove('on');
+  if (S.lastFocus && S.lastFocus.focus) S.lastFocus.focus();
+  S.lastFocus = null;
+}
+function focusables() {
+  return [...$('#mask').querySelectorAll('button,input,select,textarea,a[href]')].filter(el => !el.disabled && el.offsetParent !== null);
+}
+function onCancel(fn) { const el = $('#cCancel'); if (el) el.onclick = fn || closeModal; }
+const footClose = () => '<span class="spacer"></span><button class="btn ghost sm" id="cCancel">' + esc(T('act.gotIt')) + '</button>';
+
+/* ---------- task dialog ---------- */
+function openTask(kind) {
+  const K = TASKS[kind];
+  const pool = K.pkg ? S.pkgs : S.repos;
+  const chosen = pool.filter(x => S.sel.has(kOf(x)) && usable(x));
+  const items = [], skipped = new Map();
+  for (const x of chosen) {
+    const why = K.skip ? K.skip(x) : null;
+    if (why) skipped.set(why, (skipped.get(why) || 0) + 1);
+    else items.push(x);
+  }
+  if (!items.length) {
+    const why = [...skipped.keys()].map(k => T(k)).join(' / ') || T('task.none.reason');
+    show(T('task.none.title'), '<p>' + esc(T('task.none.body', { reason: why })) + '</p>', footClose());
+    onCancel(); focusFirst(); return;
+  }
+  const rows = items.map(x => {
+    const flags = [];
+    if (K.pkg) {
+      flags.push((x.version_count || 0) + ' ' + TN('stats.versions', x.version_count || 0));
+      if (x.visibility === 'public') flags.push(T('tag.public'));
+    } else {
+      if (kind === 'delete' || kind === 'transfer') {
+        if (x.stargazers_count) flags.push('★ ' + x.stargazers_count);
+        if (x.forks_count) flags.push(x.forks_count + ' ' + TN('stats.forks', x.forks_count));
+      }
+      if (x.archived) flags.push(T('tag.archived'));
+      if (x.private) flags.push(T('tag.private'));
+    }
+    const label = K.pkg ? x.owner.login + '/' + x.name : x.full_name;
+    return '<div><span>' + esc(label) + '</span><span class="flag">' + esc(flags.join(' · ')) + '</span></div>';
+  }).join('');
+
+  const f = K.field;
+  const fieldHtml = !f ? '' : f.kind === 'number'
+    ? '<div class="field"><label for="' + f.id + '">' + esc(T(f.label)) + '</label><input id="' + f.id + '" type="number" min="0" step="1" value="' + f.value + '"></div>'
+    : '<div class="field"><label for="' + f.id + '">' + esc(T(f.label)) + '</label>' +
+      '<input id="' + f.id + '" list="orgList" placeholder="' + esc(S.orgs[0] || 'my-org') + '" autocomplete="off" spellcheck="false">' +
+      '<datalist id="orgList">' + S.orgs.map(o => '<option value="' + esc(o) + '">').join('') + '</datalist></div>';
+  const ackText = K.danger ? T('ack.delete') : (K.ack ? T(K.ack) : '');
+  const skipLine = skipped.size
+    ? '<p class="warn">' + esc(TN('task.skipped', [...skipped.values()].reduce((a, b) => a + b, 0), { why: [...skipped.keys()].map(k => T(k)).join(' / ') })) + '</p>' : '';
+  const preflight = (kind === 'delete' && lacksDeleteScope(S.tokenKind, S.scopes) && !S.demo)
+    ? '<p class="bad">' + T('task.preflightDelete') + '</p>' : '';
+
+  show(taskTitle(kind, items.length),
+    '<p>' + esc(T(K.note)) + '</p>' + preflight + skipLine +
+    '<div class="list">' + rows + '</div>' + fieldHtml +
+    (ackText ? '<label class="chk"><input type="checkbox" id="cAck"><span>' + esc(ackText) + '</span></label>' : ''),
+    (K.danger ? '<input class="confirm-in" id="cWord" placeholder="' + esc(T('confirm.word')) + '" autocomplete="off" spellcheck="false">' +
+      '<button class="btn ghost sm" id="cFill">' + esc(T('act.fill')) + '</button>' : '') +
+    '<span class="spacer"></span><button class="btn ghost sm" id="cCancel">' + esc(T('act.back')) + '</button>' +
+    '<button class="btn ' + (K.danger ? 'danger ' : '') + 'sm" id="cRun">' + esc(T('task.' + kind + '.verb')) + '</button>');
+
+  const btn = $('#cRun');
+  const check = () => {
+    let ok = true;
+    if (K.danger) ok = $('#cAck').checked && $('#cWord').value.trim().toUpperCase() === 'DELETE';
+    else if (K.ack) ok = $('#cAck').checked;
+    if (f && f.kind === 'org') ok = ok && $('#cTarget').value.trim().length > 0;
+    if (f && f.kind === 'number') ok = ok && $('#cKeep').value !== '' && +$('#cKeep').value >= 0;
+    btn.disabled = !ok;
+  };
+  ['#cAck', '#cWord', '#cTarget', '#cKeep'].forEach(s => { const el = $(s); if (el) { el.oninput = check; el.onchange = check; } });
+  if ($('#cFill')) $('#cFill').onclick = () => { $('#cWord').value = 'DELETE'; check(); (btn.disabled ? $('#cAck') : btn).focus(); };
+  check();
+  onCancel();
+  btn.onclick = () => runTask(items, kind, {
+    target: f && f.kind === 'org' ? $('#cTarget').value.trim() : null,
+    keep: f && f.kind === 'number' ? $('#cKeep').value : null
+  });
+  ($('#cTarget') || $('#cKeep') || $('#cWord') || btn).focus();
+}
+function focusFirst() { const els = focusables(); if (els.length) els[els.length - 1].focus(); }
+
+/* ---------- runner ---------- */
+function describeError(e) {
+  if (e.aborted) return { msg: T('err.aborted'), extra: '' };
+  if (e.status === 404) return { msg: T('err.404'), extra: '' };
+  if (e.status === 451) {
+    const b = (e.data && e.data.block) || {};
+    return {
+      msg: T('err.451', { reason: b.reason ? ' (' + b.reason + ')' : '' }),
+      extra: b.html_url ? ' <a href="' + esc(b.html_url) + '" target="_blank" rel="noopener noreferrer">notice</a>' : ''
+    };
+  }
+  if (e.plan && e.plan.reason === 'primary') return { msg: T('err.rateLimit', { time: fmtClock(e.resetAt || Date.now()) }), extra: '' };
+  if (e.plan && e.plan.reason === 'secondary') return { msg: T('err.secondary'), extra: '' };
+  if (e.status === 0) return { msg: T('err.net'), extra: '' };
+  if (e.status === 403) {
+    const need = e.perms || e.accepted;
+    const have = S.scopes || (S.tokenKind === 'fine' ? T('perm.kindFine') : T('err.unknownScopes'));
+    return {
+      msg: T('err.403', { msg: e.message }),
+      extra: (need ? '<br>　' + esc(T('err.needs', { need, have })) : '') +
+        '<br>　' + esc(S.tokenKind === 'fine' ? T('advice.fine') : T('advice.classic', { scopes: S.scopes || T('err.unknownScopes') }))
+    };
+  }
+  return { msg: e.message, extra: '' };
+}
+function updateRowStatus(key) {
+  const tr = $('#table').querySelector('tr[data-n="' + (window.CSS && CSS.escape ? CSS.escape(key) : key.replace(/"/g, '\\"')) + '"]');
+  if (!tr) return;
+  const st = S.status.get(key);
+  const cell = tr.lastElementChild;
+  cell.innerHTML = st ? '<span class="st ' + st.state + '">' + esc(st.text) + '</span>' : '';
+  tr.classList.toggle('gone', S.gone.has(key));
+}
+
+async function runTask(items, kind, opts) {
+  const K = TASKS[kind];
+  S.busy = true;
+  S.abort = new AbortController();
+  S.report = [];
+  $('#action').classList.remove('on');
+  show(T('run.title', { title: taskTitle(kind, items.length) }),
+    '<div class="prog' + (K.danger ? ' red' : '') + '"><i id="pBar"></i></div><div class="log" id="pLog" aria-live="polite"></div>',
+    '<span class="count" id="pTip">' + esc(T('run.tip')) + '</span><span class="spacer"></span>' +
+    '<button class="btn ghost sm" id="pStop">' + esc(T('act.stop')) + '</button>' +
+    '<button class="btn ghost sm" id="pClose" disabled>' + esc(T('act.done')) + '</button>');
+  const log = $('#pLog'), tip = $('#pTip');
+  $('#pStop').onclick = () => { $('#pStop').disabled = true; $('#pStop').textContent = T('act.stopping'); S.abort.abort(); };
+  S.onWait = plan => {
+    tip.textContent = plan.reason === 'primary' || plan.reason === 'secondary'
+      ? T('run.waiting', { s: Math.ceil(plan.waitMs / 1000) })
+      : T('run.retry', { n: 1 });
+  };
+  const line = (cls, text, html) => {
+    log.insertAdjacentHTML('beforeend', '<div class="' + cls + '">' + esc(text) + (html || '') + '</div>');
+    log.scrollTop = log.scrollHeight;
+  };
+  const note = (action, target, result, detail) =>
+    S.report.push([new Date().toISOString(), action, target, result, detail]);
+
+  let ok = 0, fail = 0, stopped = false;
+  for (let i = 0; i < items.length; i++) {
+    if (S.abort.signal.aborted) { stopped = true; break; }
+    const x = items[i];
+    const key = kOf(x);
+    const label = K.pkg ? x.owner.login + '/' + x.name : x.full_name;
+    S.status.set(key, { state: 'run', text: T('run.processing') });
+    updateRowStatus(key);
+    try {
+      const res = S.demo ? await demoRun(K, x, opts) : await K.run(x, opts);
+      K.after(x, opts, res);
+      const text = K.ok(x, res, opts);
+      S.status.set(key, { state: 'ok', text });
+      ok++;
+      note(kind, label, 'ok', text);
+      line('ok', text + '  ' + label);
+    } catch (e) {
+      if (e.aborted) { S.status.delete(key); stopped = true; break; }
+      const d = describeError(e);
+      S.status.set(key, { state: 'err', text: d.msg });
+      if (kind === 'delete' && e.status !== 451) S.failed.set(x.full_name, { status: e.status || 0, msg: e.message });
+      if (e.status === 451) S.blocked.set(x.full_name, { reason: ((e.data && e.data.block) || {}).reason || 'unknown', url: ((e.data && e.data.block) || {}).html_url || '' });
+      fail++;
+      note(kind, label, 'failed', d.msg);
+      line('no', (S.lang === 'zh' ? '失败  ' : 'failed  ') + label + ' — ' + d.msg, d.extra);
+    }
+    updateRowStatus(key);
+    tip.textContent = T('run.tip');
+    $('#pBar').style.width = ((i + 1) / items.length * 100) + '%';
+    if (i < items.length - 1) { try { await sleep(S.demo ? 40 : 220); } catch (e) { stopped = true; break; } }
+  }
+  S.busy = false; S.onWait = null;
+  const skip = items.length - ok - fail;
+  $('#mTitle').textContent = stopped ? T('run.stopped') : (fail ? T('run.doneFail') : T('run.done'));
+  $('#pTip').textContent = T('run.summary', {
+    ok,
+    failPart: fail ? T('run.failPart', { n: fail }) : '',
+    skipPart: stopped && skip > 0 ? T('run.skipPart', { n: skip }) : ''
+  }) + (kind === 'transfer' && ok ? T('run.transferNote') : '');
+  $('#pStop').remove();
+  if (S.report.length) {
+    $('#pTip').insertAdjacentHTML('afterend',
+      '<button class="btn ghost sm" id="pReport">' + esc(T('run.report')) + '</button>');
+    $('#pReport').onclick = () => download('repo-cleaner-' + kind + '-' + stamp() + '.csv',
+      '﻿' + toCSV(RUN_CSV_HEAD, S.report), 'text/csv;charset=utf-8');
+  }
+  const done = $('#pClose');
+  done.disabled = false; done.onclick = closeModal; done.focus();
+  render();
+}
+async function demoRun(K, x, opts) {
+  await sleep(90 + Math.random() * 160);
+  if (Math.random() < 0.08) { const e = new Error(T('demo.simFail')); e.status = 403; throw e; }
+  return K.demoRun ? K.demoRun(x, opts) : null;
+}
+
+/* ---------- files & clipboard ---------- */
+function stamp() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return '' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+}
+function download(name, text, mime) {
+  const url = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function copyText(text, btn) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e2) {}
+    ta.remove();
+  }
+  if (btn) { const old = btn.textContent; btn.textContent = T('act.copied'); setTimeout(() => { btn.textContent = old; }, 1600); }
+}
+function pickedOrFiltered() {
+  const picked = (isRepos() ? S.repos : S.pkgs).filter(x => S.sel.has(kOf(x)));
+  return picked.length ? { items: picked, fromSel: true } : { items: filtered(), fromSel: false };
+}
+
+/* ---------- token scopes dialog ---------- */
+function openPerms() {
+  const caps = scopeReport(S.tokenKind, S.scopes);
+  const rows = caps.map(c => {
+    const cls = c.ok === true ? 'y' : c.ok === false ? 'n' : '';
+    const text = c.ok === true ? T('perm.yes') : c.ok === false ? T('perm.no', { need: c.need }) : T('perm.maybe') + ' · ' + c.need;
+    return '<tr><td>' + esc(T('perm.cap.' + c.id)) + '</td><td class="' + cls + '">' + esc(text) + '</td></tr>';
+  }).join('');
+  show(T('perm.title'),
+    '<p>' + esc(T('perm.intro')) + '</p><table class="perm">' +
+    '<tr><td>' + esc(T('perm.kind')) + '</td><td>' + esc(T(S.tokenKind === 'fine' ? 'perm.kindFine' : 'perm.kindClassic')) + '</td></tr>' +
+    '<tr><td>' + esc(T('perm.scopes')) + '</td><td>' + esc(S.scopes || T('err.unknownScopes')) + '</td></tr>' +
+    rows + '</table>' + (S.tokenKind === 'fine' ? '<p>' + esc(T('perm.fineNote')) + '</p>' : ''),
+    footClose());
+  onCancel(); focusFirst();
+}
+
+/* ---------- export / backup ---------- */
+function openExport() {
+  const { items, fromSel } = pickedOrFiltered();
+  const repos = isRepos();
+  const csv = repos ? toCSV(REPO_CSV_HEAD, repoCsvRows(items)) : toCSV(PKG_CSV_HEAD, pkgCsvRows(items));
+  const json = JSON.stringify(items.map(x => repos
+    ? { full_name: x.full_name, private: !!x.private, fork: !!x.fork, archived: !!x.archived, size_kb: x.size || 0, stars: x.stargazers_count || 0, language: x.language || null, pushed_at: x.pushed_at || null, html_url: x.html_url }
+    : { owner: x.owner.login, name: x.name, type: x.package_type, visibility: x.visibility, versions: x.version_count, updated_at: x.updated_at }), null, 2);
+  show(TN('export.title', items.length),
+    '<p>' + esc(T('export.intro')) + '</p>' + (fromSel ? '' : '<p class="warn">' + esc(T('export.sel')) + '</p>') +
+    '<textarea class="ta" id="tTxt" readonly>' + esc(csv) + '</textarea>',
+    '<button class="btn sm" id="dCsv">CSV</button><button class="btn ghost sm" id="dJson">JSON</button>' +
+    '<button class="btn ghost sm" id="tCopy">' + esc(T('act.copy')) + '</button>' +
+    '<span class="spacer"></span><button class="btn ghost sm" id="cCancel">' + esc(T('act.close')) + '</button>');
+  const base = (repos ? 'repositories-' : 'packages-') + stamp();
+  $('#dCsv').onclick = () => download(base + '.csv', '﻿' + csv, 'text/csv;charset=utf-8');
+  $('#dJson').onclick = () => download(base + '.json', json, 'application/json');
+  $('#tCopy').onclick = e => copyText(csv, e.target);
+  onCancel();
+}
+function openBackup() {
+  const { items, fromSel } = pickedOrFiltered();
+  if (!items.length) { show(T('task.none.title'), '<p>' + esc(T('empty.filter')) + '</p>', footClose()); onCancel(); return; }
+  const script = backupScript(items, S.user.login);
+  show(TN('backup.title', items.length),
+    '<p>' + esc(T('backup.intro')) + '</p><p>' + esc(T('backup.note')) + '</p>' +
+    (fromSel ? '' : '<p class="warn">' + esc(T('export.sel')) + '</p>') +
+    '<textarea class="ta" id="tTxt" readonly>' + esc(script) + '</textarea>',
+    '<button class="btn sm" id="dSh">' + esc(T('act.download')) + '</button>' +
+    '<button class="btn ghost sm" id="tCopy">' + esc(T('act.copy')) + '</button>' +
+    '<span class="spacer"></span><button class="btn ghost sm" id="cCancel">' + esc(T('act.close')) + '</button>');
+  $('#dSh').onclick = () => download('backup-repos-' + stamp() + '.sh', script, 'text/x-shellscript');
+  $('#tCopy').onclick = e => copyText(script, e.target);
+  onCancel();
+}
+
+/* ---------- blocked scan + support ticket ---------- */
+async function scanBlocked() {
+  if (S.scanning) { if (S.abort) S.abort.abort(); return; }
+  if (!S.repos.length || S.busy) return;
+  S.scanning = true;
+  S.abort = new AbortController();
+  S.blocked.clear();
+  const btn = $('#scan');
+  btn.textContent = T('act.stop');
+  const note = $('#notice');
+  note.hidden = false; note.className = 'notice';
+  const list = S.repos.slice();
+  let next = 0, done = 0;
+  const worker = async () => {
+    while (next < list.length && !S.abort.signal.aborted) {
+      const r = list[next++];
+      try { await gh(repoPath(r)); }
+      catch (e) {
+        if (e.aborted) return;
+        if (e.status === 451) {
+          const b = (e.data && e.data.block) || {};
+          S.blocked.set(r.full_name, { reason: b.reason || 'unknown', url: b.html_url || '' });
+        }
+      }
+      done++;
+      note.textContent = T('notice.scanning', { done, total: list.length, found: S.blocked.size });
+    }
+  };
+  try { await Promise.all(Array.from({ length: 5 }, worker)); } catch (e) {}
+  S.scanning = false;
+  btn.textContent = T('act.scan');
+  S.notice = S.blocked.size ? T('notice.blockedFound', { n: S.blocked.size }) : T('notice.blockedNone');
+  S.noticeKind = S.blocked.size ? 'bad' : '';
+  render();
+}
+function ticketReason(r) {
+  const b = S.blocked.get(r.full_name);
+  if (b) return 'disabled by GitHub, reason: ' + b.reason + (b.url ? ', notice: ' + b.url : '');
+  const f = S.failed.get(r.full_name);
+  if (f) return 'deletion returns HTTP ' + f.status + ': ' + f.msg;
+  if (!isAdmin(r)) return 'I have no admin rights on this repository';
+  return 'I am unable to delete it from my account';
+}
+function openTicket() {
+  const stuck = r => S.blocked.has(r.full_name) || S.failed.has(r.full_name);
+  const picked = S.repos.filter(r => S.sel.has(r.full_name));
+  const items = picked.length ? picked : S.repos.filter(stuck);
+  if (!items.length) {
+    show(T('ticket.none.title'), '<p>' + esc(T('ticket.none.body')) + '</p>', footClose());
+    onCancel(); focusFirst(); return;
+  }
+  const nBlocked = items.filter(r => S.blocked.has(r.full_name)).length;
+  const n403 = items.filter(r => { const f = S.failed.get(r.full_name); return f && f.status === 403; }).length;
+  const body = ticketBody(S.user.login, items, ticketReason);
+  const warn = (n403 && lacksDeleteScope(S.tokenKind, S.scopes))
+    ? '<p class="bad">' + esc(T('ticket.warn403', { n: n403 })) + '</p>' : '';
+  show(TN('ticket.title', items.length),
+    '<p>' + esc(T('ticket.intro', { blocked: nBlocked, failed: items.length - nBlocked })) + ' ' +
+    esc(picked.length ? T('ticket.fromSel') : T('ticket.fromAll')) + '</p>' + warn +
+    '<textarea class="ta" id="tTxt" readonly>' + esc(body) + '</textarea>',
+    '<button class="btn sm" id="tCopy">' + esc(T('act.copy')) + '</button>' +
+    '<button class="btn ghost sm" id="tOpen">' + esc(T('act.openSupport')) + '</button>' +
+    '<span class="spacer"></span><button class="btn ghost sm" id="cCancel">' + esc(T('act.close')) + '</button>');
+  $('#tCopy').onclick = e => copyText(body, e.target);
+  $('#tOpen').onclick = async () => {
+    await copyText(body, $('#tCopy'));
+    window.open('https://support.github.com/request', '_blank', 'noopener,noreferrer');
+  };
+  onCancel();
+  $('#tTxt').focus();
+}
+function openKeys() {
+  const row = (k, label) => '<tr><td><kbd>' + esc(k) + '</kbd></td><td>' + esc(T(label)) + '</td></tr>';
+  show(T('keys.title'), '<table class="keys">' +
+    row('/', 'keys.search') + row('A', 'keys.all') + row('C', 'keys.none') +
+    row('Esc', 'keys.esc') + row('Shift + click', 'keys.shift') + row('?', 'keys.help') + '</table>', footClose());
+  onCancel(); focusFirst();
+}
+
+/* ---------- language & theme ---------- */
+function applyI18n() {
+  document.documentElement.lang = S.lang === 'zh' ? 'zh-CN' : 'en';
+  document.title = T('app.title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
+  $('#q').placeholder = T('search.ph');
+  $('#lang').textContent = S.lang === 'en' ? '中文' : 'EN';
+  $('#trust').innerHTML = [1, 2, 3].map(i =>
+    '<div><b>' + esc(T('trust.' + i + 't')) + '</b><span>' + esc(T('trust.' + i + 'd')) + '</span></div>').join('');
+  $('#hint').innerHTML = T('hint.scopes') + ' ' + T('hint.storage');
+  $('#footNote').textContent = T('foot.note');
+  $('#theme').title = T('theme.' + S.theme);
+  if (S.user) { fillFilters(true); render(); }
+}
+function setLang(lang) { S.lang = lang; prefSet('lang', lang); applyI18n(); }
+const THEMES = ['auto', 'light', 'dark'];
+const THEME_GLYPH = { auto: '◐', light: '☀', dark: '☾' };
+function setTheme(v) {
+  S.theme = v; prefSet('theme', v);
+  if (v === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', v);
+  $('#theme').textContent = THEME_GLYPH[v];
+  $('#theme').title = T('theme.' + v);
+}
+
+/* ---------- filters ---------- */
+function opt(value, label, cur) {
+  return '<option value="' + esc(value) + '"' + (cur === value ? ' selected' : '') + '>' + esc(label) + '</option>';
+}
+function fillFilters(keep) {
+  const prev = keep
+    ? { owner: $('#fOwner').value, vis: $('#fVis').value, kind: $('#fKind').value, age: $('#fAge').value }
+    : { owner: 'all', vis: 'all', kind: 'all', age: 'all' };
+  const owners = [...new Set((isRepos() ? S.repos : S.pkgs).map(x => x.owner.login))].sort();
+  $('#fOwner').innerHTML = opt('all', T('f.owner.all'), prev.owner) + owners.map(o => opt(o, o, prev.owner)).join('');
+  $('#fVis').innerHTML = isRepos()
+    ? opt('all', T('f.vis.both'), prev.vis) + opt('public', T('f.vis.public'), prev.vis) + opt('private', T('f.vis.private'), prev.vis)
+    : opt('all', T('f.vis.all'), prev.vis) + opt('public', T('f.vis.public'), prev.vis) + opt('private', T('f.vis.private'), prev.vis) + opt('internal', T('f.vis.internal'), prev.vis);
+  $('#fKind').innerHTML = isRepos()
+    ? ['all', 'source', 'fork', 'archived', 'template', 'empty', 'nostar', 'stuck'].map(k => opt(k, T('f.kind.' + k), prev.kind)).join('')
+    : opt('all', T('f.kind.all'), prev.kind) + [...new Set(S.pkgs.map(p => p.package_type))].sort().map(t2 => opt(t2, t2, prev.kind)).join('');
+  $('#fAge').innerHTML = ['all', 'fresh', '1', '2', '3'].map(k => opt(k, T('f.age.' + (k === 'all' || k === 'fresh' ? k : k + 'y')), prev.age)).join('');
+  if (!keep) $('#q').value = '';
+}
+
+async function switchView(v) {
+  if (S.busy || S.view === v) return;
+  S.view = v; S.sel.clear(); S.lastIdx = null; S.page = 1;
+  $('#tabR').classList.toggle('on', v === 'repos');
+  $('#tabP').classList.toggle('on', v === 'packages');
+  $('#tabR').setAttribute('aria-selected', String(v === 'repos'));
+  $('#tabP').setAttribute('aria-selected', String(v === 'packages'));
+  fillFilters(false); render();
+  if (v === 'packages' && !S.pkgLoaded) {
+    $('#table').innerHTML = '<div class="empty">' + esc(T('empty.pkgsLoading')) + '</div>';
+    try {
+      if (S.demo) { S.pkgLoaded = true; await sleep(300); }
+      else await loadPkgs();
+    } catch (e) {
+      if (!e.aborted) { S.pkgWarn = T('notice.pkgFail', { msg: e.message }); S.pkgLoaded = true; }
+    }
+    fillFilters(false); render();
+  }
+}
+
+/* ---------- connect ---------- */
+function enterApp() {
+  $('#utilsSlot').appendChild($('#utils'));
+  $('#hero').style.display = 'none';
+  $('#bar').classList.add('on');
+  $('#tools').classList.add('on');
+  $('#demoFlag').hidden = !S.demo;
+  $('#avatar').textContent = (S.user.login || '?').slice(0, 1).toUpperCase();
+  $('#login').textContent = S.user.login;
+  fillFilters(false);
+  render();
+}
+async function connect() {
+  const raw = $('#token').value.trim();
+  if (!raw) { showErr(T('err.noToken')); return; }
+  S.token = raw;
+  S.demo = false;
+  S.tokenKind = raw.startsWith('github_pat_') ? 'fine' : 'classic';
+  S.abort = new AbortController();
+  const go = $('#go');
+  go.disabled = true; go.textContent = T('act.connecting');
+  $('#err').hidden = true;
+  try {
+    await loadRepos();
+    $('#token').value = '';
+    enterApp();
+  } catch (e) {
+    showErr(e.status === 401 ? T('err.badToken') : T('err.load', { msg: describeError(e).msg }));
+  } finally {
+    go.disabled = false; go.textContent = T('act.connect');
+  }
+}
+function startDemo() {
+  const d = demoData(Date.now());
+  S.demo = true; S.token = ''; S.tokenKind = 'classic'; S.scopes = 'repo, delete_repo, read:org, read:packages, delete:packages';
+  S.user = d.user; S.repos = d.repos; S.pkgs = d.pkgs; S.orgs = d.orgs;
+  S.pkgLoaded = false; S.rate = '';
+  enterApp();
+}
+function showErr(m) { const el = $('#err'); el.textContent = m; el.hidden = false; }
+function reset() {
+  if (S.abort) S.abort.abort();
+  S.token = ''; S.user = null; S.demo = false;
+  S.repos = []; S.pkgs = []; S.orgs = []; S.pkgLoaded = false; S.pkgWarn = '';
+  S.sel.clear(); S.status.clear(); S.gone.clear(); S.blocked.clear(); S.failed.clear();
+  S.notice = ''; S.noticeKind = ''; S.capped = 0; S.scopes = null; S.rate = ''; S.view = 'repos'; S.page = 1;
+  $('#hero').querySelector('.hero-top').appendChild($('#utils'));
+  $('#hero').style.display = '';
+  $('#bar').classList.remove('on');
+  $('#tools').classList.remove('on');
+  $('#action').classList.remove('on');
+  $('#stats').innerHTML = ''; $('#table').innerHTML = ''; $('#pager').innerHTML = '';
+  $('#notice').hidden = true;
+  $('#tabR').classList.add('on'); $('#tabP').classList.remove('on');
+  $('#token').focus();
+}
+
+/* ---------- events ---------- */
+$('#go').onclick = connect;
+$('#demo').onclick = startDemo;
+$('#token').onkeydown = e => { if (e.key === 'Enter') connect(); };
+$('#tabR').onclick = () => switchView('repos');
+$('#tabP').onclick = () => switchView('packages');
+$('#perms').onclick = openPerms;
+$('#scan').onclick = scanBlocked;
+$('#ticket').onclick = openTicket;
+$('#backup').onclick = openBackup;
+$('#export').onclick = openExport;
+$('#keysBtn').onclick = openKeys;
+$('#logout').onclick = reset;
+$('#refresh').onclick = async () => {
+  if (S.busy || S.demo) { if (S.demo) startDemo(); return; }
+  S.sel.clear(); S.status.clear(); S.gone.clear(); S.failed.clear(); S.capped = 0;
+  S.abort = new AbortController();
+  const btn = $('#refresh');
+  btn.disabled = true;
+  try {
+    await loadRepos();
+    if (S.pkgLoaded) { S.pkgLoaded = false; await loadPkgs(); }
+    fillFilters(true); render();
+  } catch (e) {
+    if (!e.aborted) { S.notice = T('err.load', { msg: describeError(e).msg }); S.noticeKind = 'bad'; render(); }
+  } finally { btn.disabled = false; }
+};
+['#q', '#fOwner', '#fVis', '#fKind', '#fAge'].forEach(s =>
+  $(s).addEventListener('input', () => { S.lastIdx = null; S.page = 1; render(); }));
+$('#selAll').onclick = () => { filtered().forEach(x => { if (usable(x)) S.sel.add(kOf(x)); }); render(); };
+$('#selInv').onclick = () => {
+  filtered().forEach(x => {
+    if (!usable(x)) return;
+    const k = kOf(x);
+    S.sel.has(k) ? S.sel.delete(k) : S.sel.add(k);
+  });
+  render();
+};
+$('#selNone').onclick = () => { S.sel.clear(); syncSelection(); };
+$('#aClear').onclick = () => { S.sel.clear(); syncSelection(); };
+$('#lang').onclick = () => setLang(S.lang === 'en' ? 'zh' : 'en');
+$('#theme').onclick = () => setTheme(THEMES[(THEMES.indexOf(S.theme) + 1) % THEMES.length]);
+document.querySelectorAll('[data-task]').forEach(b => b.onclick = () => openTask(b.dataset.task));
+$('#mask').onclick = e => { if (e.target === $('#mask')) closeModal(); };
+$('#mask').addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const els = focusables();
+  if (!els.length) return;
+  const first = els[0], last = els[els.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+document.addEventListener('keydown', e => {
+  const open = $('#mask').classList.contains('on');
+  if (e.key === 'Escape') {
+    if (open) closeModal();
+    else if (S.sel.size) { S.sel.clear(); syncSelection(); }
+    return;
+  }
+  if (open || e.ctrlKey || e.metaKey || e.altKey) return;
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if (typing || !$('#tools').classList.contains('on')) return;
+  if (e.key === '/') { e.preventDefault(); $('#q').focus(); }
+  else if (e.key === 'a' || e.key === 'A') { e.preventDefault(); $('#selAll').click(); }
+  else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); $('#selNone').click(); }
+  else if (e.key === '?') { e.preventDefault(); openKeys(); }
+});
+window.addEventListener('beforeunload', e => { if (S.busy) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- boot ---------- */
+(function boot() {
+  const saved = prefGet('lang', '');
+  const nav = (navigator.language || 'en').toLowerCase();
+  S.lang = saved === 'zh' || saved === 'en' ? saved : (nav.startsWith('zh') ? 'zh' : 'en');
+  const size = parseInt(prefGet('pageSize', '100'), 10);
+  S.pageSize = [0, 50, 100, 250].includes(size) ? size : 100;
+  setTheme(THEMES.includes(prefGet('theme', 'auto')) ? prefGet('theme', 'auto') : 'auto');
+  applyI18n();
+  $('#token').focus();
+})();
+</script>
+</body>
+</html>
