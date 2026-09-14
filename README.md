@@ -5,8 +5,8 @@ hundreds of repos down to the ones you have forgotten about, then archive, trans
 flip visibility, prune old package versions, or delete them — in one pass, with a
 confirmation list in front of every action.
 
-**[Open the app](https://always1ov.github.io/github-repo-cleaner/)** ·
-[中文说明](README.zh-CN.md)
+**[Download `index.html`](index.html)** and open it in a browser — that is the whole
+install. · [中文说明](README.zh-CN.md)
 
 ![The repository list with filters, stats and the bulk action bar](docs/screenshot.png)
 
@@ -41,10 +41,8 @@ them. See [SECURITY.md](SECURITY.md) for the threat model.
 
 1. Create a token at [github.com/settings/tokens](https://github.com/settings/tokens).
    A **classic** token works best — see the scopes below.
-2. Open the app — [hosted](https://always1ov.github.io/github-repo-cleaner/), or
-   download [`index.html`](index.html) and double-click it.
-   *(Hosting this yourself? Set Settings → Pages → Source to **GitHub Actions**
-   once; the deploy workflow handles every push after that.)*
+2. Download [`index.html`](index.html) and open it — double-click it, or serve the
+   folder locally if you prefer. It needs nothing else.
 3. Paste the token and press **Read my account**.
 4. Revoke the token when you are done.
 

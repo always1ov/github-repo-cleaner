@@ -4,7 +4,7 @@
 然后归档、转移、切换公开私有、清理软件包旧版本，或者直接删掉——一次做完，每个动作执行前
 都会把要动的东西逐条列出来。
 
-**[打开应用](https://always1ov.github.io/github-repo-cleaner/)** ·
+**[下载 `index.html`](index.html)**，用浏览器打开就行，没有别的安装步骤。 ·
 [English](README.md)
 
 ![带筛选、统计和批量操作栏的仓库列表](docs/screenshot.png)
@@ -39,10 +39,8 @@
 
 1. 到 [github.com/settings/tokens](https://github.com/settings/tokens) 建一个令牌，
    建议用**经典令牌**，权限见下表。
-2. 打开应用——[在线版](https://always1ov.github.io/github-repo-cleaner/)，
-   或者把 [`index.html`](index.html) 下载下来双击。
-   *（自己部署的话，先到 Settings → Pages → Source 选 **GitHub Actions**，
-   这一步只需做一次，之后每次推送都会自动部署。）*
+2. 把 [`index.html`](index.html) 下载下来打开——双击即可，想用本地服务器起也行。
+   它不需要任何其他东西。
 3. 粘贴令牌，点「读取」。
 4. 用完回去把令牌吊销。
 

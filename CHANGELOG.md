@@ -2,8 +2,8 @@
 
 ## 1.0.0
 
-The single-page tool grew into a product: hosted, documented, tested, and safe to hand a
-token to.
+The single-page tool grew into a product: documented, tested, and safe to hand a token
+to.
 
 ### Trust
 
@@ -41,7 +41,7 @@ token to.
 - Stats strip (count, disk usage, forks, archived, stale, empty) doubling as filters;
   new staleness and template filters.
 - Keyboard shortcuts, focus-trapped dialogs, and a layout that holds up on a phone.
-- 55 tests: unit, structural and end-to-end in real Chromium; GitHub Pages deployment.
+- 55 tests: unit, structural and end-to-end in real Chromium, run in CI.
 
 ### Moved
 
