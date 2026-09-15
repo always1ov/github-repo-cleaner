@@ -38,12 +38,13 @@ export const copy = {
   'perm.intro': ['Classic scopes can be reported by GitHub. Fine-grained permissions may remain unknown; GitHub authorizes each request.', 'GitHub 可返回 Classic Token 的权限范围。细粒度权限可能无法完整获知，最终由 GitHub 对每次请求授权。'],
   'perm.fineNote': ['Fine-grained PAT permissions cannot be inferred reliably here. Repository writes need Administration: Read and write and selected-repository access. Packages require a classic token; repository transfer does not support fine-grained PATs. Organization policies may impose additional restrictions.', '这里无法可靠识别细粒度 PAT 的全部权限。仓库写操作需要 Administration: Read and write 及对应仓库授权。软件包需要 Classic Token，仓库转移不支持 fine-grained PAT。组织策略可能另有限制。'],
   'backup.title': ['Generate Git backup script · {n} repositories', '生成 Git 备份脚本 · {n} 个仓库'],
-  'backup.title.one': ['Generate Git backup script · {n} repository', '生成 Git 备份脚本 · {n} 个仓库'],
   'backup.intro': ['This only generates commands. Run and verify the backup yourself before deleting. Git mirrors include history and refs, not a complete GitHub project backup: issues, pull requests, release assets, settings, secrets, packages, LFS objects, and separate wikis need additional handling.', '这里只生成命令。删除前请自行运行并验证备份。Git 镜像包含历史和引用，不是完整的 GitHub 项目备份：Issues、PR、发布附件、设置、密钥、软件包、LFS 对象和独立 Wiki 需要另行处理。'],
   'backup.note': ['For private repositories, use a credential helper or gh auth login. Never paste a token into this script or a shareable URL. Downloading the script does not run it.', '私有仓库请使用凭据助手或 gh auth login。不要将 Token 写入脚本或可分享的 URL。下载脚本不代表已经执行。'],
   'keys.all': ['Select loaded matches', '选择已加载的匹配项'],
   'foot.note': ['Free & open source · Browser → GitHub API · No subscription', '免费开源 · 浏览器直连 GitHub API · 没有订阅']
 };
+// English has singular forms; Chinese intentionally falls back to its base key.
+export const singularCopy = { 'backup.title.one': 'Generate Git backup script · {n} repository' };
 export const extra = {
   en: {
     'site.free':'Free & open source','site.guide':'Guide','site.security':'Security','site.token':'GitHub personal access token',
@@ -107,7 +108,7 @@ export const boot = `
 const mark = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h4"/></svg>';
 export function enhanceApp(source, css) {
   let html = replaceTranslations(source, copy);
-  html = replaceOnce(html, '/* </core> */', `Object.assign(I18N.en, ${JSON.stringify(extra.en)});\nObject.assign(I18N.zh, ${JSON.stringify(extra.zh)});\n/* </core> */`);
+  html = replaceOnce(html, '/* </core> */', `Object.assign(I18N.en, ${JSON.stringify({ ...extra.en, ...singularCopy })});\nObject.assign(I18N.zh, ${JSON.stringify(extra.zh)});\n/* </core> */`);
   html = replaceOnce(html, '</style>', css + '\n</style>');
   html = replaceOnce(html, '<body>', `<body>\n<a class="app-skip" href="#workspace">Skip to workspace</a>\n<nav class="product-nav" aria-label="Product"><a class="product-brand" id="productHome" href="../index.html"><span class="product-mark">${mark}</span>Repo Cleaner</a><div class="product-nav-links"><span class="free-badge" data-i18n="site.free"></span><a id="productGuide" href="../guide/index.html" data-i18n="site.guide"></a><a id="productSecurity" href="../security/index.html" data-i18n="site.security"></a></div></nav>\n<noscript><p style="padding:20px">JavaScript is required for the workspace. The guide and security pages work without JavaScript.</p></noscript>`);
   const steps = [1,2,3].map(n => `<div><b data-i18n="site.step${n}"></b><span data-i18n="site.step${n}d"></span></div>`).join('');
