@@ -1,25 +1,23 @@
 name: CI
-
 on:
   push:
     branches: ["**"]
   pull_request:
   workflow_dispatch:
-
+permissions:
+  contents: read
 jobs:
   unit:
-    name: Unit and structure tests
+    name: Unit, security and site tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # No dependencies on purpose: the app is a single file with nothing to install.
       - run: npm test
-
   browser:
-    name: End-to-end (Chromium)
+    name: Published site (Chromium)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,4 +26,24 @@ jobs:
           node-version: 22
       - run: npm install --no-save playwright
       - run: npx playwright install --with-deps chromium
+      - run: npm run build
       - run: node --test test/browser.test.mjs
+      - name: Upload visual review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-review
+          path: test-results/
+          if-no-files-found: ignore
+  cloudflare:
+    name: Cloudflare deployment dry run
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run deploy:check

@@ -1,14 +1,26 @@
 {
   "name": "github-repo-cleaner",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Bulk-manage your GitHub repositories and packages from a single HTML page that can only talk to api.github.com.",
+  "description": "A free, English-first GitHub cleanup website and self-contained browser workspace. No subscriptions or application backend.",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/always1ov/github-repo-cleaner.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/always1ov/github-repo-cleaner.git"
+  },
   "type": "module",
   "scripts": {
+    "build": "node site/build.mjs",
+    "dev": "npm run build && node site/serve.mjs",
+    "preview": "node site/serve.mjs",
+    "pretest": "npm run build",
     "test": "node --test test/*.test.mjs",
-    "test:browser": "npm install --no-save playwright && npx playwright install --with-deps chromium && node --test test/browser.test.mjs"
+    "test:browser": "npm run build && npm install --no-save playwright && npx playwright install --with-deps chromium && node --test test/browser.test.mjs",
+    "predeploy": "npm run build",
+    "deploy": "npx --yes wrangler@4 deploy",
+    "deploy:check": "npm run build && npx --yes wrangler@4 deploy --dry-run"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=22"
+  }
 }

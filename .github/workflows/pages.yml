@@ -1,19 +1,13 @@
 name: Deploy to GitHub Pages
-
 on:
-  push:
-    branches: [master, main]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
   deploy:
     environment:
@@ -25,15 +19,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # Never publish a build that broke the security guarantees.
-      - run: npm test
-      - name: Assemble the site
-        run: |
-          mkdir -p _site
-          cp index.html _site/index.html
+      - name: Build and test the exact published site
+        run: npm test
+        env:
+          SITE_URL: https://always1ov.github.io/github-repo-cleaner/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
       - id: deploy
         uses: actions/deploy-pages@v4

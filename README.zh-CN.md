@@ -1,109 +1,93 @@
-# GitHub 仓库清理台
+# Repo Cleaner
 
-在一个页面里批量管理你 GitHub 账号下的仓库和软件包：从几百个仓库里筛出早就忘掉的那些，
-然后归档、转移、切换公开私有、清理软件包旧版本，或者直接删掉——一次做完，每个动作执行前
-都会把要动的东西逐条列出来。
+面向海外、英文优先的 **免费 GitHub 仓库整理小工具**，提供完整中文网站与工作台。
+没有注册、订阅、支付、广告或功能付费墙，原有整理功能全部保留。
 
-**[打开应用](https://always1ov.github.io/github-repo-cleaner/)** ·
-[English](README.md)
+[![一键部署到 Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2Falways1ov%2Fgithub-repo-cleaner%2Ftree%2Ffree-tool)
 
-![带筛选、统计和批量操作栏的仓库列表](docs/screenshot.png)
+[English](README.md) · [新版分支 free-tool](https://github.com/always1ov/github-repo-cleaner/tree/free-tool) · [安全模型](SECURITY.md)
 
-<details>
-<summary>深色主题</summary>
+## 点击按钮部署
 
-![带筛选、统计和批量操作栏的仓库列表 in dark mode](docs/screenshot-dark.png)
+上方按钮明确指向 **`free-tool` 分支**，不会误用原作者的 `master`。
+点击后登录 Cloudflare，按提示授权 GitHub，确认新仓库名称和 Worker 名称，再点击 **Deploy**。
+“一键”指直接进入预填了代码来源的部署流程，仍需你本人登录、授权并确认发布。
 
-</details>
+**官方按钮会创建一份新的 GitHub 仓库副本**，并让 Workers Builds 跟踪该副本的生产分支。
+以后修改原仓库不会自动同步到副本。要持续部署当前仓库，请在 Cloudflare 的
+Workers & Pages → 创建应用中连接本仓库，选择生产分支 **`free-tool`**。
 
-首页有**演示模式**，跑的是编出来的数据，不会发出任何请求。你可以把每个按钮都点一遍——包括
-删除——再决定要不要把令牌交给它。
+| 配置 | 值 |
+| --- | --- |
+| 框架 | None / 静态站点 |
+| 根目录 | 仓库根目录 |
+| 构建命令 | `npm run build` |
+| 部署命令 | `npm run deploy` |
+| 静态目录 | `dist/`，已写入 `wrangler.jsonc` |
+| Node.js | 22 或更高 |
+| 必填应用密钥 | 无 |
 
-## 为什么可以放心把令牌粘进来
+这里使用 **Workers Static Assets**，只是托管静态网页，不增加 Worker 业务脚本、数据库、
+OAuth 后端、KV 或 R2。Cloudflare 官方部署按钮支持 Workers，不支持 Pages。
+**不要把清理工具用的 GitHub Token 填进部署环境变量或源码。** 它由使用者在自己浏览器里
+输入，与网站部署授权是两回事。
 
-这个工具要的令牌能删掉你名下每一个仓库。光靠嘴上保证不够，所以下面几条都是结构性的，
-每条你都能在一分钟内自己验证：
+构建不需要安装依赖；部署时通过 `npx` 使用 Wrangler 4。路由、404 页面和 `workers.dev`
+访问地址已在配置中处理。
 
-| 保证 | 怎么自己验证 |
-|---|---|
-| 页面只能访问**一个域名**：`api.github.com`。文档里的 `Content-Security-Policy` 让浏览器拦掉其他一切——别的主机、图片、字体、iframe、统计脚本。这不是信任问题，是浏览器直接拒绝。 | 查看源代码前 10 行；或者打开 DevTools 的 Network 面板看着。 |
-| **没有服务端、没有构建、没有依赖。** 一个 HTML 文件，没有 `<script src>`，没有 CDN，运行时不装任何 npm 包。 | `grep -o '<script[^>]*>' index.html` → 只有一个 `<script>`，没有 `src` |
-| **令牌不落任何存储。** 它只活在一个 JavaScript 变量里，随标签页一起消失。不写 localStorage，不写 cookie，不进地址栏。刷新就没了。 | `grep -n 'localStorage\.' index.html` → 只有两处，`prefGet` 和 `prefSet`，只管语言、主题和每页条数。 |
-| **离线可用。** 把文件下载到本地双击打开，之后再也不需要这个仓库。 | 保存页面，断网，打开——界面正常，只是接口调不通。 |
-| **不执行动态代码。** 没有 `eval`，没有 `new Function`。 | `grep -nE "eval\(|new Function" index.html` → 什么都没有。 |
+## 可选：域名与搜索收录配置
 
-这五条都有测试在 CI 里守着，后面的提交没法悄悄破坏它们。威胁模型见
-[SECURITY.md](SECURITY.md)。
+不填 `SITE_URL` 也能部署和使用。拿到真实访问地址后，可在 Cloudflare 的**构建环境变量**
+中设置 `SITE_URL` 为实际的 HTTPS 地址，再重新构建，以启用 canonical、语言替代地址和
+站点地图。不设置时不输出这些依赖绝对地址的标签，不会错误指向原仓库的 GitHub Pages。
 
-## 开始使用
+自定义域名仍需要在 Cloudflare 中绑定；设置 `SITE_URL` 不会购买或绑定域名。
+不需要任何应用密钥。
 
-1. 到 [github.com/settings/tokens](https://github.com/settings/tokens) 建一个令牌，
-   建议用**经典令牌**，权限见下表。
-2. 打开应用——[在线版](https://always1ov.github.io/github-repo-cleaner/)，
-   或者把 [`index.html`](index.html) 下载下来双击。
-3. 粘贴令牌，点「读取」。
-4. 用完回去把令牌吊销。
+官方参考：[部署按钮](https://developers.cloudflare.com/workers/platform/deploy-buttons/)、
+[静态资源部署](https://developers.cloudflare.com/workers/static-assets/get-started/)、
+[构建配置](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)。
 
-### 令牌权限
+## 包含内容
 
-| 权限 | 不勾会怎样 |
-|---|---|
-| `repo` | 基本没法用——看不到私有仓库，也改不了任何东西 |
-| `delete_repo` | 删除一律 403（应用会在执行前就提醒你，而不是等失败） |
-| `read:org` | 看不到组织里的仓库，转移目标列表也是空的 |
-| `read:packages` | 软件包标签页是空的 |
-| `delete:packages` | 删不了软件包，也清理不了版本 |
+中英文首页、指南、安全、隐私与使用说明；浅色墨绿色视觉与明暗工作台；免授权演示；
+旧 Fork、长期未更新、已归档快捷筛选；原有仓库和软件包操作、导出、Git 备份脚本与执行报告。
+删除前仍需检查影响清单并明确确认，所有功能免费。
 
-细粒度令牌可以管仓库——把 *Repository permissions → Administration* 设成
-*Read and write*——但 GitHub 的 Packages 接口至今只认经典令牌，所以软件包标签页用不了。
-顶部的「令牌权限」会在你动手之前，把这个令牌能做什么、不能做什么列清楚。
+## 本地开发与测试
 
-## 能做什么
-
-**找东西。** 搜名称和描述；按账号、可见性、类型（原创 / fork / 已归档 / 模板 / 空仓库 /
-无人 star / 删不掉的）和沉寂时长（一年、两年、三年没动）筛选。统计条给出仓库数、占用空间、
-fork 数、归档数、沉寂数和空仓库数——点任意一格就按它筛选。
-
-**批量动手。** 点击选择，shift 点击选一段，或者「选中全部结果」。然后：
-
-- **归档 / 取消归档**——可逆，拿不准要不要删的时候先走这一步
-- **转移**到组织或别的账号
-- **设为私有 / 设为公开**
-- **删除**仓库
-- **清理软件包版本**——保留最新 N 个，其余删掉
-- **删除软件包**
-
-**留好退路。** 删之前可以为当前勾选生成一份 `git clone --mirror` **备份脚本**，或者把清单
-**导出**成 CSV / JSON。跑完之后还能下载一份 CSV 报告，记录哪些成功、哪些失败。
-
-**处理 GitHub 不让你删的那些。**「检测封禁仓库」会找出返回 HTTP 451（被 GitHub 停用）的
-仓库——这些接口和设置页都删不掉。「生成删除工单」把要发给 GitHub 支持团队的正文写好，
-逐条列出仓库和它卡住的原因。
-
-## 安全措施
-
-- 每个动作执行前都会列出**具体要动哪些**，并标出 star、fork 和归档状态。
-- 删除需要**两道确认**：勾选确认框，再手动输入 `DELETE`。
-- 设为公开要额外确认历史里没有密钥。
-- 做不了的会**跳过并说明原因**，不会闷声失败——归档仓库是只读的，所以改可见性时会提前排除。
-- 缺 `delete_repo` 会在**执行前**发现，不用等第一个 403。
-- 长任务可以**中途停下**，已完成的项目保留结果。
-- 限流处理是认真的：尊重 `Retry-After` 和 `x-ratelimit-reset`，二级限流指数退避，5xx 和
-  网络抖动会重试。如果恢复时间太远，会停下来告诉你几点恢复，而不是干等着。
-
-## 开发
-
-没有依赖，不用构建。改 `index.html`，刷新浏览器。
+需要 Node.js 22+。静态构建和单元测试不需要安装依赖。
 
 ```sh
-npm test              # 43 个单元 / 结构测试，零依赖
-npm run test:browser  # 12 个真实 Chromium 端到端测试（会装 Playwright）
+npm run dev           # 构建一次并启动 http://127.0.0.1:4173
+npm run build         # 修改后重新构建，输出 dist/
+npm run preview       # 预览已有构建
+npm test              # 构建、逻辑、安全和网站测试
+npm run test:browser  # 安装可选浏览器测试依赖并运行
+npm run deploy:check  # Cloudflare 部署演练，不发布
+npm run deploy        # Cloudflare 授权后构建并发布
 ```
 
-单元测试直接读取真实的 `index.html`：把 `/* <core> */` 标记之间的纯逻辑原样取出来执行，
-测的是实际发布的代码而不是副本。结构测试负责守住上面那几条安全保证、两种语言的键完全一致、
-以及没有没用上的翻译。
+CI 覆盖逻辑与安全测试、Chromium 浏览器测试及 Cloudflare dry run。
+浏览器测试只使用演示数据或模拟 API，不执行真实删除。
+此分支的 GitHub Pages 发布改为**仅手动触发**，避免复制模板后意外发布。
 
-## 许可
+## 目录说明
 
-[MIT](LICENSE)
+**发布 `dist/`，不要发布仓库根目录。** 根目录 `index.html` 保留原始单文件引擎；`site/`
+包含网站与经过锚点校验的整合代码，`test/` 测试实际生成的工作台，`wrangler.jsonc`
+负责 Cloudflare 静态部署。锚点不匹配时构建会失败，不会静默跳过改动。
+
+`dist/`、`.wrangler/`、依赖、本地密钥和测试截图都不提交到 Git。
+生成的 `dist/app/index.html` 仍可保存到本地打开：界面和演示可离线，真实操作需要联网。
+
+## 安全提醒
+
+优先使用短期、限定仓库范围的 Token。Administration 写权限属于高权限，不是普通登录。
+Token 从浏览器直接发给 GitHub，不经过应用后端，不保存到本地存储或 URL；
+本地仅保存显示偏好。托管平台可能保留普通访问与安全日志。
+
+本工具不提供撤销。生成 Git 镜像脚本不代表备份已经运行或验证，也不是 Issues、发布附件、
+设置、软件包、LFS 和 Wiki 的完整备份。不确定时请归档。详见 [SECURITY.md](SECURITY.md)。
+
+采用 [MIT](LICENSE) 许可证，与 GitHub 无隶属或背书关系。

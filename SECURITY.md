@@ -1,63 +1,64 @@
 # Security
 
-## What this tool is
+These statements describe the generated `dist/app/index.html` published by the site
+build. The root `index.html` is a preserved engine/template; deploy `dist/`, not the root.
 
-A single static HTML file that runs in your browser and calls the GitHub REST API with a
-token you paste. There is no server, no account, no telemetry, and no build artifact —
-what you read in `index.html` is exactly what runs.
+## Data flow
 
-## Threat model
+The workspace calls `https://api.github.com` directly from the browser. It has no
+application backend, database, account system, payment integration, analytics, or
+session recording. Your token is sent to GitHub in the Authorization header.
 
-The token you paste can read your private code and delete your repositories. The risk is
-that the page sends it somewhere else, or keeps it around after you are done. Both are
-addressed structurally rather than by promise:
+Tokens are held in memory, never intentionally stored in localStorage, sessionStorage,
+IndexedDB, cookies, or URLs. The password input also contains the token while typing;
+the published app clears it when connecting, entering the demo, or disconnecting.
+A failed connection clears the in-memory token. Closing/reloading discards the session.
+Only language, theme, and page-size preferences are persisted under `grc.` keys.
+Exports and reports remain wherever the user explicitly saves them.
 
-**The browser enforces where the page may connect.** The document carries:
+The static hosting provider still receives ordinary website requests and may process
+IP addresses, user agents, and access/security logs under its own policies. No analytics
+is not the same as no infrastructure logging.
 
-```
-default-src 'none'; connect-src https://api.github.com; img-src data:;
-style-src 'unsafe-inline'; script-src 'unsafe-inline';
-base-uri 'none'; form-action 'none'
-```
+## Defensive layers
 
-`default-src 'none'` denies everything by default. `connect-src` then permits exactly one
-origin, so `fetch`, XHR, WebSocket and beacon calls to any other host are blocked by the
-browser itself. There are no remote images, fonts, stylesheets, scripts or frames to act
-as side channels — even the avatar is drawn locally from the first letter of your login.
-`form-action 'none'` means nothing can be submitted anywhere, and `base-uri 'none'`
-prevents a `<base>` tag from re-pointing relative URLs.
+- CSP denies network sources by default and permits app API connections only to
+  `https://api.github.com`. The published inline script is authorized by its SHA-256 hash.
+- No remote scripts, styles, images, fonts, frames, or runtime dependencies are needed.
+- The request helper also rejects other origins and credential-bearing URLs before fetch.
+- Tokens are not accepted from query parameters or fragments. Fragments only select
+  English/Chinese or the no-network demo.
+- Ambiguous/missing source-adapter anchors fail the build. Tests read the generated
+  workspace, validate its CSP hash, and exercise its core logic and UI.
+- On hosts supporting `_headers`, frame restrictions, MIME protection, and a referrer
+  policy supplement the in-document CSP. Header support is host-specific.
 
-**The token is only ever in memory.** It is held in one variable and sent only as an
-`Authorization` header. It is never written to `localStorage`, `sessionStorage`,
-IndexedDB, a cookie, or the URL. Closing or reloading the tab discards it. The only
-persisted data is three display preferences (`grc.lang`, `grc.theme`, `grc.pageSize`).
+## Limits
 
-**No dynamic code.** No `eval`, no `new Function`, no dependency that could be updated
-under you. The one `fetch` call site is a single function, so the network surface is
-auditable in one read.
+These controls are not an absolute security guarantee. An attacker controlling the
+published HTML can change its code and CSP. Browser extensions, malware, a compromised
+publisher/build environment, and user mistakes are outside these guarantees. Review the
+source and the exact built artifact, use a clean browser profile when appropriate,
+restrict repository access, set a short expiry, and revoke the token afterwards.
 
-These properties are asserted by tests in `test/html.test.mjs` which run in CI, so a
-regression fails the build rather than shipping quietly.
+Deletion requires reviewing the target list, an acknowledgement, and the confirmation
+text. There is no in-tool rollback. Stopping a run does not reverse completed requests.
+GitHub may restore eligible deleted repositories within 90 days, subject to restrictions;
+never rely on this instead of a verified backup. Archive when unsure.
 
-## What this does not protect you from
+A generated Git mirror script is only a script, not proof that a backup ran successfully.
+Git history/refs are not a full backup of GitHub issues, pull requests, release assets,
+settings, secrets, LFS objects, separate wikis, or package data.
 
-- **A malicious copy.** These guarantees apply to the file you actually open. If you get
-  the page from somewhere else, read its CSP and its `fetch` call yourself, or download
-  `index.html` from this repository and run it locally.
-- **A browser extension.** Extensions can read page memory and are not bound by the
-  page's CSP. If that is part of your threat model, run the file in a clean profile.
-- **Your own mistakes.** Deletion is permanent and GitHub offers no undo. Use the backup
-  script, or archive first — archiving is reversible.
+Read GitHub's official guidance:
+- https://docs.github.com/en/repositories/creating-and-managing-repositories/restoring-a-deleted-repository
+- https://docs.github.com/en/repositories/archiving-a-github-repository/backing-up-a-repository
+- https://docs.github.com/en/rest/repos/repos
+- https://docs.github.com/en/packages/learn-github-packages/deleting-and-restoring-a-package
 
-## Handling tokens well
+## Reporting
 
-- Give the token only the scopes you need, and revoke it when you are finished.
-- Prefer a short-lived token; classic tokens accept an expiry date.
-- The **Token scopes** panel shows what your token can do before you act on anything.
-
-## Reporting an issue
-
-Open an issue at
-https://github.com/always1ov/github-repo-cleaner/issues. If it concerns the
-token-handling or CSP guarantees above, please say so in the title so it gets looked at
-first.
+Open an issue at https://github.com/always1ov/github-repo-cleaner/issues without tokens,
+credentials, private repository data, or immediately exploitable details. For sensitive
+findings, request a private reporting route first. This independent free project does
+not promise a staffed security response service or guaranteed response time.
